@@ -1,0 +1,29 @@
+{
+  "name": "@teragrep/rlo_08",
+  "description": "Syslog Javascript client library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/teragrep/rlo_08.git"
+  },
+  "bugs": {
+    "url": "https://github.com/teragrep/rlo_08/issues"
+  },
+  "scripts": {
+    "test": "karma start --single-run  ./src/test/js/karma.conf.js",
+    "karma-test": "jasmine"
+  },
+  "author": "Teragrep",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "async": "^3.2.1",
+    "dotenv": "^10.0.0",
+    "jasmine": "^3.99.0",
+    "jasmine-core": "^3.7.1",
+    "jasmine-node": "^1.16.0",
+    "karma": "^6.3.3",
+    "karma-jasmine": "^4.0.1",
+    "karma-requirejs": "^1.1.0",
+    "node": "^14.19.0",
+    "requirejs": "^2.3.6"
+  }
+}
