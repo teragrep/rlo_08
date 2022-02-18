@@ -17,6 +17,7 @@
   "devDependencies": {
     "async": "^3.2.1",
     "dotenv": "^10.0.0",
+    "dsa.js": "^2.7.6",
     "jasmine": "^3.99.0",
     "jasmine-core": "^3.7.1",
     "jasmine-node": "^1.16.0",
