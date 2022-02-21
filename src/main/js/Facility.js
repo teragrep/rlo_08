@@ -1,4 +1,20 @@
 /**
+ * 
+ * Relp Output component RLO_08  
+ * Copyright (C) 2021, 2022  Suomen Kanuuna Oy
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.  
+ */
+
+/**
+ * 
  * @description 
  * Syslog facility as defined in <a href="https://tools.ietf.org/html/rfc5424">RFC 5424 - The Syslog Protocol</a>.
  * @see 
@@ -25,7 +41,7 @@ let _numericalCode;
 let _label;
 
 
-class Facility extends Enumify {
+class Facility extends Enumify.Enumify {
     /**
      * Kernal messages, numerical code 0
      */
@@ -148,7 +164,20 @@ class Facility extends Enumify {
     static facilityFromNumericalCode = new HashMap();
 
     
-    
+     /**
+     * @todo
+     *  Similar to Java, create the static values method that returns an array containing all of the values of the enum 
+     * 
+     * 
+    */ 
+      static facilityValues(){
+        for(const facility in Facility){
+            if(facility !== undefined){
+               console.log(facility)
+            }
+        
+        }
+    }
 
     /**
      * 
@@ -169,7 +198,7 @@ class Facility extends Enumify {
     /**
      * 
      * @param {number} numericalCode syslog facility numerical code
-     * @returns Syslog facility, not
+     * @returns {Facility} Syslog facility, not
      * @throws Throw error the given numericalCode is not a valid Syslog facility numerical code 
      */
     fromNumericalCode(numericalCode){
@@ -179,7 +208,7 @@ class Facility extends Enumify {
 
     /**
      * @param {enum} label syslog facility label
-     * @returns 
+     * @returns {Facility} syslo facility
      */
     fromLabel(label){
 
