@@ -15,16 +15,14 @@
 
 'use strict'
 
-const { type } = require('os');
 const util = require('util');
-const internal = {};
 
 let _paramName;
 let _paramValue;
 
 
 
-module.exports = internal.SDParam = class {
+ class SDParam {
 
     constructor(paramName, paramValue) {
         validateParamName(paramName);
@@ -68,7 +66,7 @@ module.exports = internal.SDParam = class {
     }
 
     /**
-     * Generate the hashcode null-safe
+     * Check: Generate the null-safe hashcode, Does it fulfill??
      * @returns hash
      */
     hashCode(){
@@ -78,20 +76,37 @@ module.exports = internal.SDParam = class {
         return hash;
     }
 
+    /**
+     * @todo investigate: Does it need all the validity check similar to java implementation
+     * However need to improve these methods.
+     * @param {SDParam} obj 
+     * @returns 
+     */
     equals(obj) {
         console.log(obj)
+
         if(util.isDeepStrictEqual(this, obj)){
             return  true;
         }
         if(obj == null){
             return false;
         }
-        let sdParam = this;
+        
+        if (!(obj.getClass() == "SDParam")){
+            return false;
+        }
+    }
 
-        console.log((sdParam));
-        console.log(type.prototype["constructor"]["name"]);
+    getClass(){
+        console.log(this.constructor.name);
+        return this.constructor.name;
+    }
+
+    toString(){
+        return 'SDParam{' + 'paramName=' + this._paramName + ', paramValue='+ this._paramValue + '}';
     }
 }
+module.exports = SDParam;
 
 /**
  * Private method for validate the Structure Data name 
@@ -125,9 +140,13 @@ function validateParamName(sdName){
  * @returns hash coded value for the s
  */
 function makeHash(s){
-    let h;
+    let hash;
     for (let i = 0; i < s.length; i++){
-        h = Math.imul(31, h)+ s.charCodeAt(i) | 0;
+        hash = Math.imul(31, hash)+ s.charCodeAt(i) | 0;
     }
-    return h;
+    return hash;
+}
+
+function checkEquality(obj){
+    console.log(obj.constructor.name);
 }

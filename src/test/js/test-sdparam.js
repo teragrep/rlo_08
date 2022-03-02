@@ -9,5 +9,6 @@ let SDParamtimZoneValid= new SDParam('timeZone', '0');
 let SDParamTimeZoneValidDup = new SDParam('timeZone', '1')
 console.log(SDParamtimZoneValid.hashCode());
 console.log(SDParamTimeZoneValidDup.hashCode());
-console.log(SDParamtimZoneValid.equals(SDParamTimeZoneValidDup));
+console.log(SDParamTimeZoneValidDup.getClass());
+console.log(SDParamtimZoneValid.toString());
 

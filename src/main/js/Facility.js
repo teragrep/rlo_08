@@ -22,209 +22,237 @@
  * 
  */
 
-
-'use strict'
-
-const { Enumify } = require("../../lib/Enumify");
-
-const internal = {};
-
-/**
-* syslog facility numerical code
-*/
-let _numericalCode;
-
-/**
- * Syslog facility label aka textual code.
- * @check for the nonnull and undefined
- */
-let _label;
-
-
-class Facility extends Enumify.Enumify {
-    /**
-     * Kernal messages, numerical code 0
-     */
-    static KERN = new Facility(0, "KERN");
-    /**
-     * user-level messages, numerical code 1
-     */
-    static USER = new Facility(1, "USER");
-     /**
-     * Mail system messages, numerical code 2
-     */
-    static MAIL = new Facility(2, "MAIL");
-    /**
-     * system daemon messages, numerical code 3
-     */
-    static DAEMON = new Facility(3, "DAEMON");
-     /**
-     * security/authorization messages, numerical code 4
-     */
-    static AUTH = new Facility(4, "AUTH");
-    /**
-     * syslog messages, numerical code 5
-     */
-    static SYSLOG = new Facility(5, "SYSLOG");
-     /**
-     * Line Printer Subsystem messages, numerical code 6
-     */
-    static LPR = new Facility(6, "LPR");
-    /**
-     * Ntowrk News Subsystem messages, numerical code 7
-     */
-    static NEWS = new Facility(7, "NEWS");
-     /**
-     * Unix-to-Unix Copy messages, numerical code 8
-     */
-    static UUCP = new Facility(8, "UUCP");
-    /**
-     * Clock Daemon messages, numerical code 9
-     */
-    static CRON = new Facility(9, "CRON");
-     /*
-     * non-system security/authorization messages, numerical code 10
-     */
-    static AUTHPRIV = new Facility(10, "AUTHPRIV");
-    /**
-     * FTP daemon messages, numerical code 11
-     */
-    static FTP = new Facility(11, "FTP");
-     /**
-     * NTP messages, numerical code 12
-     */
-    static NTP = new Facility(12, "NTP");
-    /**
-     * Log audit messages, numerical code 13
-     */
-    static AUDIT = new Facility(13, "AUDIT");
-     /**
-     *  Log alert messages, numerical code 14
-     */
-    static ALERT = new Facility(14, "ALERT");
-    /**
-     * clock daemon messages, numerical code 15
-     */
-    static CLOCK = new Facility(15, "CLOCK");
-     /**
-      *  reserved for local use, numerical code 16
-      */
-    static LOCAL0 = new Facility(16, "LOCAL0")
-     /**
-      *  reserved for local use, numerical code 17
-      */
-    static LOCAL1 = new Facility(17, "LOCAL1")
+ 'use strict'
+ const { HashMap } = require('dsa.js');
+ 
+ let _numericalCode;
+ let _label;
+  
+ 
+ class Facility {
       /**
-      *  reserved for local use, numerical code 18
+      * Kernal messages, numerical code 0
       */
-    static LOCAL2 = new Facility(18, "LOCAL2")
-     /**
-      *  reserved for local use, numerical code 19
-      */
-    static LOCAL3 = new Facility(19, "LOCAL3")
-      /**
-      *  reserved for local use, numerical code 20
-      */
-    static LOCAL4 = new Facility(20, "LOCAL4")
-     /**
-      *  reserved for local use, numerical code 21
-      */   
-    static LOCAL5 = new Facility(21, "LOCAL5")
-     /**
-      *  reserved for local use, numerical code 22
-      */
-    static LOCAL6 = new Facility(22, "LOCAL6")
-      /**
-      *  reserved for local use, numerical code 23
-      */
-    static LOCAL7 = new Facility(16, "LOCAL7")
-
-    
-   /**
-     * @todo The constructor similar to Java for an enum type would be packae-private or
-     * private access. it automatically creates the constants that are set at the starting of the enum body, 
-     * However, this might need some workaround for the NodeJS World.
-     * @param {number} numericalCode 
-     * @param {enum} label 
-     */
-      constructor(numericalCode, label) {
-        if((label != null) && (label != undefined)){
-        this._numericalCode = numericalCode;
-        this._label = label;
-       } else {
-           throw new Error("Should be NONNULL but Null detected");
-       }
-    }
-
-    static _ = this.closeEnum(); 
-
-    //Mapping
-
-    static facilityFromLabel = new HashMap();
-    static facilityFromNumericalCode = new HashMap();
-
-    
-     /**
-     * @todo
-     *  Similar to Java, create the static values method that returns an array containing all of the values of the enum 
-     * 
-     * 
-    */ 
-      static facilityValues(){
-        for(const facility in Facility){
-            if(facility !== undefined){
-               console.log(facility)
-            }
-        
+       static KERN = new Facility(0, "KERN");
+       /**
+        * user-level messages, numerical code 1
+        */
+       static USER = new Facility(1, "USER");
+        /**
+        * Mail system messages, numerical code 2
+        */
+       static MAIL = new Facility(2, "MAIL");
+       /**
+        * system daemon messages, numerical code 3
+        */
+       static DAEMON = new Facility(3, "DAEMON");
+        /**
+        * security/authorization messages, numerical code 4
+        */
+       static AUTH = new Facility(4, "AUTH");
+       /**
+        * syslog messages, numerical code 5
+        */
+       static SYSLOG = new Facility(5, "SYSLOG");
+        /**
+        * Line Printer Subsystem messages, numerical code 6
+        */
+       static LPR = new Facility(6, "LPR");
+       /**
+        * Ntowrk News Subsystem messages, numerical code 7
+        */
+       static NEWS = new Facility(7, "NEWS");
+        /**
+        * Unix-to-Unix Copy messages, numerical code 8
+        */
+       static UUCP = new Facility(8, "UUCP");
+       /**
+        * Clock Daemon messages, numerical code 9
+        */
+       static CRON = new Facility(9, "CRON");
+        /*
+        * non-system security/authorization messages, numerical code 10
+        */
+       static AUTHPRIV = new Facility(10, "AUTHPRIV");
+       /**
+        * FTP daemon messages, numerical code 11
+        */
+       static FTP = new Facility(11, "FTP");
+        /**
+        * NTP messages, numerical code 12
+        */
+       static NTP = new Facility(12, "NTP");
+       /**
+        * Log audit messages, numerical code 13
+        */
+       static AUDIT = new Facility(13, "AUDIT");
+        /**
+        *  Log alert messages, numerical code 14
+        */
+       static ALERT = new Facility(14, "ALERT");
+       /**
+        * clock daemon messages, numerical code 15
+        */
+       static CLOCK = new Facility(15, "CLOCK");
+        /**
+         *  reserved for local use, numerical code 16
+         */
+       static LOCAL0 = new Facility(16, "LOCAL0")
+        /**
+         *  reserved for local use, numerical code 17
+         */
+       static LOCAL1 = new Facility(17, "LOCAL1")
+         /**
+         *  reserved for local use, numerical code 18
+         */
+       static LOCAL2 = new Facility(18, "LOCAL2")
+        /**
+         *  reserved for local use, numerical code 19
+         */
+       static LOCAL3 = new Facility(19, "LOCAL3")
+         /**
+         *  reserved for local use, numerical code 20
+         */
+       static LOCAL4 = new Facility(20, "LOCAL4")
+        /**
+         *  reserved for local use, numerical code 21
+         */   
+       static LOCAL5 = new Facility(21, "LOCAL5")
+        /**
+         *  reserved for local use, numerical code 22
+         */
+       static LOCAL6 = new Facility(22, "LOCAL6")
+         /**
+         *  reserved for local use, numerical code 23
+         */
+       static LOCAL7 = new Facility(23, "LOCAL7")
+     
+ 
+       /**
+        * @param {number} numericalCode 
+        * @param {enum} label 
+        */
+     constructor(numericalCode, label) {
+         if((label != null) && (label != undefined)){
+             this._numericalCode = numericalCode;
+             this._label = label;
+        } else {
+            throw new Error("Should be NONNULL but Null detected");
         }
-    }
-
-    /**
-     * 
-     * @returns syslog facility numerical code
-     */
-    getNumbericalCode(){
-          return this._numericalCode;
-    }
-
-    /**
-     * 
-     * @returns syslog facility textual code aka label
-     */
-    getLabel(){
-        return this._label;
-    }
-
-    /**
-     * 
-     * @param {number} numericalCode syslog facility numerical code
-     * @returns {Facility} Syslog facility, not
-     * @throws Throw error the given numericalCode is not a valid Syslog facility numerical code 
-     */
-    fromNumericalCode(numericalCode){
+     }
+ 
+     static facilityFromLabel = new HashMap();
+     static facilityFromNumericalCode = new HashMap();
+ 
+     getNumericalCode(){
+         return this._numericalCode;
+     }
+ 
+     getLabel(){
+         return this._label;
+     }
+ 
+     toString() {
+         return `Facility.${this._numericalCode},   Facility.${this._label}`;
+       }
+ 
+     /**
+      * 
+      * @param {number} numericalCode 
+      * @returns {Facility} facility 
+      */
+     static fromNumericalCode(numericalCode){
+         let facility = this.facilityFromNumericalCode.get(numericalCode);
+         if(facility == null){
+             throw new Error("Invalid Facility "+ numericalCode);
+         }
+         return facility;
+     }
+ 
+ 
+     /**
+      * 
+      * @param {string} label 
+      * @returns 
+      */
+     static fromLabel(label){
+ 
+         if((label == null || label == undefined)){
+             return null;
+         }
+         let facility = this.facilityFromLabel.get(label);
+         if(facility == null){
+             throw new Error("Invalid facility "+ label);
+         }
+         return facility;
+     }
+ 
+     //Mapping
+  
+     static setByfacilityNumericalCode(){
+         let numericalCodeArray = [];
+         let facility = Object.values(Facility);
+         for(let numericalCode in Object.keys(Facility)){
+             numericalCodeArray.push(parseInt(numericalCode));
+         }    
         
-
-    }
-
-    /**
-     * @param {enum} label syslog facility label
-     * @returns {Facility} syslo facility
-     */
-    fromLabel(label){
-
-    }
-
-    /**
-     * @todo implement the similar to Java comparator 
-     * @returns compare on {Faciltiy#numericalCode()}
-     */
-    comparator(){
-
-    }
-
-    toString() {
-        return `Facility.${this._numericalCode},   Facility.${this._label}`;
-      }
-
-}
-module.exports = Facility;
+         for(let i = 0; i < facility.length; i++){
+             if((numericalCodeArray[i]  != undefined) && (facility[i] != undefined)){
+                // console.log(numericalCodeArray[i], facility[i]);
+                 this.facilityFromNumericalCode.set(numericalCodeArray[i], facility[i]);
+             }
+         }
+     }
+ 
+    
+     static setByfacilityLabel(){
+         let labels = Object.keys(Facility) // Key is the label
+         let facility = Object.values(Facility);
+         //console.log(labels)
+         //console.log(facility)
+         for(let i = 0; i < labels.length; i++){
+             //console.log(labels[i], facility[i]);
+             this.facilityFromLabel.set(labels[i], facility[i]);   
+         }
+     }
+ 
+     /**
+      * @todo: Needs enchancement, this has flaws like principal violations
+      */
+     //Fill the hashmap 
+     static fillEnum(){
+         this.setByfacilityLabel();
+         this.setByfacilityNumericalCode();
+     }
+ 
+     /**
+      * 
+      * @param {Facility} facility1 
+      * @param {Facility} facility2 
+      * @returns 
+      */
+      static compare(facility1, facility2){
+         if(facility1 instanceof Facility && facility2 instanceof Facility){
+             if(facility1._numericalCode === facility2._numericalCode){
+                 return 0;
+             }
+             else if(facility1._numericalCode > facility2._numericalCode){
+                 return 1;
+             }
+             else if(facility1._numericalCode < facility2._numericalCode){
+                 return -1;
+             }
+             else {
+                 throw new Error("There might be exceptional situation");
+             }
+         }
+     }
+ }
+ Object.defineProperty(Facility, 'facilityFromLabel', {
+     enumerable: false
+ });
+ 
+ Object.defineProperty(Facility, 'facilityFromNumericalCode',{
+     enumerable: false
+ });
+ module.exports = Facility; 
