@@ -24,7 +24,7 @@ class Severity {
      /**
      * Emergency: System is unusable, numerical code 0
      */
-      static EMERGENCY = new Severity(0, "EMEGECY");
+      static EMERGENCY = new Severity(0, "EMERGENCY");
       /**
        * Alert: Action must be taken immediately
        */
@@ -81,14 +81,20 @@ class Severity {
     /**
      * 
      * @param {number} numericalCode 
-     * @returns {} severity 
+     * @returns {Severity} severity 
      */
     static fromNumericalCode(numericalCode){
-        let severity = this.severityFromNumericalCode.get(numericalCode);
-        if(severity == null){
-            throw new Error("Invalid Severity "+ numericalCode);
+        if(numericalCode >= 0 && numericalCode <= 7){
+            let severity = this.severityFromNumericalCode.get(numericalCode);
+            if(severity == null){
+                throw new Error("Invalid Severity "+ numericalCode);
+            }
+            return severity;
         }
-        return severity;
+        else{
+            throw new Error("Invalid Severity "+numericalCode);
+        }
+        
     }
 
 
@@ -124,6 +130,7 @@ class Severity {
                 this.severityFromNumericalCode.set(numericalCodeArray[i], severity[i]);
             }
         }
+        return this.severityFromNumericalCode;
     }
 
    
@@ -136,18 +143,22 @@ class Severity {
             //console.log(labels[i], severity[i]);
             this.severityFromLabel.set(labels[i], severity[i]);   
         }
+        return this.severityFromLabel;
     }
 
+    /**
+     * Class static initializor block, tested on Node v16.14.0 LTS
+     */
     //Fill the hashmap 
-    static fillEnum(){
-        this.setByseverityLabel();
-        this.setByseverityNumericalCode();
+    static {
+        this.severityFromLabel = this.setByseverityLabel();
+        this.severityFromNumericalCode = this.setByseverityNumericalCode();
     }
 
     /**
      * 
-     * @param {*} severity1 
-     * @param {*} severity2 
+     * @param {Severity} severity1 
+     * @param {Severity} severity2 
      */
      static compare(severity1, severity2){
         if(severity1 instanceof Severity && severity2 instanceof Severity){

@@ -162,18 +162,24 @@
       * @returns {Facility} facility 
       */
      static fromNumericalCode(numericalCode){
-         let facility = this.facilityFromNumericalCode.get(numericalCode);
-         if(facility == null){
-             throw new Error("Invalid Facility "+ numericalCode);
-         }
-         return facility;
-     }
+        if(numericalCode > 0 && numericalCode <= 23){ // Check to avoid the HashMap conflicts
+            //console.log(this.facilityFromNumericalCode)
+            let facility = this.facilityFromNumericalCode.get(numericalCode);
+            if(facility == null || facility == undefined){
+                throw new Error("Invalid Facility "+ numericalCode);
+            }
+            return facility;
+        }
+        else{
+            throw new Error("Invalid Facility "+ numericalCode);
+        }
+    }
  
  
      /**
       * 
       * @param {string} label 
-      * @returns 
+      * @returns {Facility} facility 
       */
      static fromLabel(label){
  
@@ -202,6 +208,7 @@
                  this.facilityFromNumericalCode.set(numericalCodeArray[i], facility[i]);
              }
          }
+         return this.facilityFromNumericalCode;
      }
  
     
@@ -217,12 +224,14 @@
      }
  
      /**
-      * @todo: Needs enchancement, this has flaws like principal violations
+      * @version Tested with the node version v16.14.0 LTS Gallium, which supports to 
+      * class static initialization block, this is a special feature of a class enable
+      * more flexible initialization of static attributes.
       */
      //Fill the hashmap 
-     static fillEnum(){
-         this.setByfacilityLabel();
-         this.setByfacilityNumericalCode();
+     static {
+         this.facilityFromLabel = this.setByfacilityLabel();
+         this.facilityFromNumericalCode = this.setByfacilityNumericalCode();
      }
  
      /**
