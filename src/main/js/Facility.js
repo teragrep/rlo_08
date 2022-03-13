@@ -171,7 +171,7 @@
             return facility;
         }
         else{
-            throw new Error("Invalid Facility "+ numericalCode);
+            throw new Error("Invalid NumericalCode "+ numericalCode);
         }
     }
  
@@ -221,6 +221,7 @@
              //console.log(labels[i], facility[i]);
              this.facilityFromLabel.set(labels[i], facility[i]);   
          }
+         return this.facilityFromLabel;
      }
  
      /**
