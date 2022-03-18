@@ -1,5 +1,6 @@
 /**
- *  
+ *  This is simple base implemenation of the Java's TimeUnit, further extension can be applicable according to the requirements.
+ * 
  *  TimeUnit is a port of Doug Lea's public domain TimeUnit Java class to JavaScript. It was ported from the backport-util-concurrent version. 
  *  This class is the basis for java.util.concurrent.TimeUnit from JavaSE.
  *  Ported by Jason Walton, released under the public domain.

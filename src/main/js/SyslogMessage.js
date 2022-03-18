@@ -16,6 +16,7 @@
 'use strict'
 
 const { HashSet } = require("dsa.js");
+const CachingReference = require("../../util/CachingReference");
 const { RFC_3164, RFC_5424, RFC_5425 } = require("./MessageFormat");
 const MessageFormat = require("./MessageFormat");
 
@@ -44,13 +45,17 @@ class SyslogMessage {
     /**
      * @todo 
      * 1 - Create the cachingReference similar with java implementation
-     * 2 - concurrency
+     * 2 - concurrency???
      * 
      */
-    static localhostNameReference; // Need to  get the local host name
-    static concurrncy; // Need to set the concurrency, rfc3339, rfc3164 DataFormat
+    static localhostNameReference = this.cachingReferenceInit();  // Need to  get the local host name
+    static concurrncy; // Need to set the concurrency, rfc3339, rfc3164 DateFormat
 
-
+    
+    static cachingReferenceInit(){
+        this.localhostNameReference = new CachingReference(10, "seconds");
+        this.localhostNameReference.newObject();
+    }
 
 
     getFacility(){
