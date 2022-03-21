@@ -1,8 +1,11 @@
 const CachingReference = require('../../util/CachingReference');
+const fetchHost = require('../../util/FetchHost');
 
- const cr = new CachingReference(5, "days");
- //console.log(Moment.duration(10));
- //console.log(TimeUnit.seconds.toMillis(5))
- //console.log(TimeUnit.milliseconds.convert(5, TimeUnit.seconds));
- //console.log(Object.getOwnPropertyNames(TimeUnit));
- //console.log(Object.keys(TimeUnit));
+
+ const simpleCache = new CachingReference(fetchHost);
+
+ setTimeout(simpleCache.getData, 0);
+ setTimeout(simpleCache.getData, 1000)
+ setTimeout(simpleCache.getData, 12000)
+ setTimeout(simpleCache.getData, 4000)
+ setTimeout(simpleCache.getData, 6000)
