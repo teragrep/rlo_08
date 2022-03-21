@@ -19,6 +19,7 @@ const { HashSet } = require("dsa.js");
 const CachingReference = require("../../util/CachingReference");
 const { RFC_3164, RFC_5424, RFC_5425 } = require("./MessageFormat");
 const MessageFormat = require("./MessageFormat");
+const FetchHost = require('../../util/FetchHost');
 
 
 let _facility;
@@ -44,18 +45,25 @@ class SyslogMessage {
     static rfc3164DateFormat;
     /**
      * @todo 
-     * 1 - Create the cachingReference similar with java implementation
+     * 1 - Create the cachingReference similar with java implementation // Drop this feature
+     * set method HostName 
+     * OverEngineered, wrap the necessary params
      * 2 - concurrency???
      * 
      */
-    static localhostNameReference = this.cachingReferenceInit();  // Need to  get the local host name
+    static localhostNameReference = new CachingReference(FetchHost);  //  get the host name and refresh every 10
     static concurrncy; // Need to set the concurrency, rfc3339, rfc3164 DateFormat
 
     
-    static cachingReferenceInit(){
-        this.localhostNameReference = new CachingReference(10, "seconds");
-        this.localhostNameReference.newObject();
-    }
+    
+    /*
+    * According to <a href="http://tools.ietf.org/html/rfc3164#section-4.1.2">RFC31614- 4.1.2 HEADER Part of a syslog Packet</a>,
+    * we should use local time and not GMT.
+    * <quote>
+    *     The TIMESTAMP field is the local time and is in the format of "Mmm dd hh:mm:ss" (without the quote marks)
+    * </quote>
+    */
+
 
 
     getFacility(){
