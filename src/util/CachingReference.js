@@ -28,7 +28,7 @@ class CachingReference {
         this.resetCache = this.resetCache.bind(this);
         this.isCacheExpired = this.isCacheExpired.bind(this);
         this.fetchDate = new Date(0);
-        console.log(this.timeToLiveInMillis);
+       // console.log(this.timeToLiveInMillis);
 
     }
     isCacheExpired() {
@@ -36,7 +36,7 @@ class CachingReference {
         return (this.fetchDate.getTime() + this.timeToLiveInMillis < new Date())
     }
 
-    getData() {
+    async getData() {
         if(!this.cache || this.isCacheExpired()){
             console.log('Expired - Fetching the hostname')
             return this.fetchHost()
@@ -44,6 +44,7 @@ class CachingReference {
                     console.log(data, new Date())
                     this.cache = data;
                     this.fetchDate = new Date();
+                    return Promise.resolve(this.cache); // TODO: Check for the flaw ☢️
                  });
         } 
         else {

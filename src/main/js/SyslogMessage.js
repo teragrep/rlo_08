@@ -20,6 +20,7 @@ const CachingReference = require("../../util/CachingReference");
 const { RFC_3164, RFC_5424, RFC_5425 } = require("./MessageFormat");
 const MessageFormat = require("./MessageFormat");
 const FetchHost = require('../../util/FetchHost');
+const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
 
 
 let _facility;
@@ -33,15 +34,15 @@ let _sdElements; //Set datastructure
 let _msg; //charArrayWriter
 
 /**
- * @todo enhance the implementation with Builder design pattern
+ * @todo enhance the implementation with Builder design pattern, handling writeSDElement, paramvalue...
  * 
  */
 class SyslogMessage {
 
     static SP = ' ';
     static NILVALUE = '-';
-    static DEFAULT_CONCURRENCY = 50;
-    static rfc3339DateFormat;
+    static DEFAULT_CONCURRENCY = 50; // TODO: NA this time, TBD
+    static rfc3339DateFormat = RFC3339DateFormat;
     static rfc3164DateFormat;
     /**
      * @todo 
@@ -94,23 +95,46 @@ class SyslogMessage {
 
     /**
      * @todo
+     * @returns the Date object created using the timestamp (milliseconds)
      */
     getTimestamp(){
+        return this_timestamp == null ? null : new Date(this._timestamp);
         
     }
 
+    /**
+     * @param {Date} 
+     */
     setTimestamp(timestamp){
-        this._timestamp = timestamp;
+        if(timestamp instanceof Date){
+            this._timestamp = timestamp == null ? null : timestamp.getTime();
+        }
     }
 
     /**
      * @todo
-     * @param {*} timestamp 
+     * @param {Number} timestamp 
      */
     withTimestamp(timestamp){
 
-        this._timestamp = (timestamp == null ? null: time); // TODO
-        return this;
+        if(isNaN(timestamp)){
+            throw new Error('Not a Number. Unsupported Format');
+        }
+        else {
+            this._timestamp = timestamp;
+            return this;
+        }
+    }
+
+    /**
+     * 
+     * @param {Date} timestamp 
+     */
+    withDateTimeStamp(timestamp){
+
+        if(timestamp instanceof Date){
+            this._timestamp = timestamp == null ? null : timestamp.getTime();
+        }
     }
 
     getHostname(){
@@ -194,31 +218,134 @@ class SyslogMessage {
 
     /**
      * 
+     * 
+     * Generates an <a href="http://tools.ietf.org/html/rfc5424">RFC-5424</
+     * ,a> message.
+     * 
+     * 
      */
     toRfc5424SyslogMessage(){
 
+        let stringWriter = Buffer.alloc(this._msg == null ? 32 : this._msg.size() + 32);
+        try {
+            this.toRfc5424SyslogMessagewithWriter(stringWriter);
+        }
+        catch(err){
+            throw new Error()
+
+        }
+        return stringWriter; // Lets return the buffer, so we can adjust the content 
+
     }
 
+    /**
+     * 
+     * @param {Buffer} out  
+     * uses UTF-8 by default. 
+     * Keep in mind that some characters may occupy more than one byte in the buffer like é
+     * @todo possible enhancement
+     */
+    async toRfc5424SyslogMessagewithWriter(out) {
+        
+        let offset = 0; // Marker to locate the position to write
+        let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
+        out.write('<', offset++); // write the 1st char and move the marker to the next writeable location
+        out.write(pri.toString(), offset);
+        offset += pri.toString().length; // Move the marker after number of chars in the PRI value
+        out.write('>', offset++);
+        out.write('1', offset++); // Version
+        out.write(this.SP, offset++);
+        //TODO: Replace the RFC3339DateFormat
+        let rfc3339timeStamp = (this._timestamp == null ? rfc3339DateFormat(new Date()) : rfc3339DateFormat(new Date(this._timestamp)));
+        out.write(rfc3339timeStamp, offset);
+        offset += rfc3339timeStamp.toString().length;
+        out.write(this.SP, offset++);
+        // set the hostname
+        this._hostname == null ? await this.localhostNameReference.getData() : this._hostname; // 
+        out.write(this._hostname, offset);
+        offset += this._hostname.length;
+        out.write(this.SP, offset++);
+        //appname
+        let appTemp = this.writeNilableValue(this._appName, out, offset);
+        offset = appTemp.offset;
+        out.write(this.SP, offset++);
+        //PID
+        let proTemp = this.writeNilableValue(this._procId, out, offset);
+        offset = proTemp.offset;
+        out.write(this.SP, offset++);
+        //msgID
+        let msgTemp = this.writeNilableValue(this._msgId, out, offset);
+        offset = msgTemp.offset;
+        out.write(this.SP, offset++);
+        //write SD
+        writeStructureDataOrNillableValue(sdElements, out);
 
+    }
 
+    /**
+     * @todo transform to private method
+     * @param {string} value 
+     * @param {Buffer} out 
+     * @param {Number} offset 
+     * @returns {Buffer, Number}
+     */
+    writeNilableValue(value, out, offset){
+        if(value == null){
+            out.write(this.NILVALUE, offset);
+            offset++;
+            return {out: out, offset: offset};
+        }
+        else {
+            out.write(value, offset);
+            offset += value.length;
+            return {out, offset};
+        }
+    }
 
+    /**
+     * 
+     * @param {*} sdElements 
+     * @param {*} out 
+     */
+     writeStructureDataOrNillableValue(sdElement, out){
+         if(sdElement == null || sdElement.isEmpty()){
+             
+         }
 
+     }
 
+     /**
+      * 
+      * @param {*} sdElement 
+      * @param {*} out 
+      */
+     writeSDElement(sdElement, out){
 
+     }
+     
+     /**
+      * 
+      * @param {*} sdParam 
+      * @param {*} out 
+      */
+     writeSDParam(sdParam, out){
 
+     }
 
+     /**
+      * 
+      * @param {*} paramValue 
+      */
+     getEscapedParamValue(paramValue){
 
-
-
-
+     }
     
 
 
 
 
 
-
-
-
 }
+module.exports = SyslogMessage;
+    
 
