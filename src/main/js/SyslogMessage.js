@@ -43,9 +43,9 @@ class SyslogMessage {
 
     static SP = ' ';
     static NILVALUE = '-';
-    static DEFAULT_CONCURRENCY = 50; // TODO: NA this time, TBD
+    static DEFAULT_CONCURRENCY = 50; // TODO: NA?? TBD
     static rfc3339DateFormat = RFC3339DateFormat;
-    static rfc3164DateFormat;
+    static rfc3164DateFormat; // TODO: later
     /**
      * @todo 
      * 1 - Create the cachingReference similar with java implementation // Drop this feature
@@ -68,6 +68,19 @@ class SyslogMessage {
     */
 
 
+    /**
+     * Builder pattern handler
+     * @returns 
+     */
+    constructor(build){
+        this._facility = build._facility;
+        this._severity = build._severity;
+        this._timestamp = build._timestamp;
+        this._hostname = build._hostname;
+        this._appName = build._appName;
+        this._msg = build._msg;
+        this._sdElements = build._sdElements;
+    }
 
     getFacility(){
         return this._facility;
@@ -77,22 +90,12 @@ class SyslogMessage {
         this._facility = facility;
     }
 
-    withFacility(facility){
-        this._facility = facility;
-        return this;
-    }
-
     getSeverity(){
         return this._severity;
     }
 
     setSeverity(severity){
         this._severity = severity;
-    }
-
-    withSeverity(severity){
-        this._severity = severity;
-        return this;
     }
 
     /**
@@ -113,43 +116,12 @@ class SyslogMessage {
         }
     }
 
-    /**
-     * @todo
-     * @param {Number} timestamp 
-     */
-    withTimestamp(timestamp){
-
-        if(isNaN(timestamp)){
-            throw new Error('Not a Number. Unsupported Format');
-        }
-        else {
-            this._timestamp = timestamp;
-            return this;
-        }
-    }
-
-    /**
-     * 
-     * @param {Date} timestamp 
-     */
-    withDateTimeStamp(timestamp){
-
-        if(timestamp instanceof Date){
-            this._timestamp = timestamp == null ? null : timestamp.getTime();
-        }
-    }
-
     getHostname(){
         return this._hostname;
     }
 
     setHostname(hostname){
         this._hostname = hostname;
-    }
-
-    withHostname(hostname){
-        this._hostname = hostname;
-        return this;
     }
 
     getAppName(){
@@ -173,16 +145,6 @@ class SyslogMessage {
         this._msg = msg;
     }
 
-    /**
-     * @todo investigate for the need of simila java implementation of the charArrayWriter vs final String 
-     * @param {*} msg 
-     * @returns 
-     */
-    withMsg(msg){
-        this._msg = msg;
-        return this;
-    }
-
     getSDElements(){
         let ssde = this._sdElements;
         if(ssde == null){
@@ -195,12 +157,81 @@ class SyslogMessage {
         this._sdElements = ssde; // TODO
     }
 
-    withSDElement(sde){
-        if(this._sdElements == null){
-            this._sdElements = new HashSet();
+    /**
+     * Builder pattern implementation
+     */
+    static get Builder(){
+        class Builder{
+            constructor(){
+
+            } //Init
+
+            withFacility(facility){
+                this._facility = facility;
+                return this;
+            }
+
+            withSeverity(severity){
+                this._severity = severity;
+                return this;
+            }
+
+            /**
+             * @todo
+             * @param {Number} timestamp 
+            */
+            withTimestamp(timestamp){
+                if(isNaN(timestamp)){
+                    throw new Error('Not a Number. Unsupported Format');
+                }
+                else {
+                    this._timestamp = timestamp;
+                    return this;
+                }
+            }
+
+            /**
+             * 
+             * @param {Date} timestamp 
+             */
+            withDateTimeStamp(timestamp){
+                if(timestamp instanceof Date){
+                    this._timestamp = timestamp == null ? null : timestamp.getTime();
+                }
+            }
+
+            withHostname(hostname){
+                this._hostname = hostname;
+                return this;
+            }
+
+            withAppName(appName){
+                this._appName = appName;
+                return this;
+            }
+            /**
+             * @todo investigate for the need of simila java implementation of the charArrayWriter vs final String 
+             * @param {*} msg 
+             * @returns 
+             */
+            withMsg(msg){
+                this._msg = msg;
+                return this;
+            }
+            
+            withSDElement(sde){
+                if(this._sdElements == null){
+                    this._sdElements = new HashSet();
+                }
+                this._sdElements.add(sde) //TODO
+                return this;
+            }
+
+            build(){
+                return new SyslogMessage(this);
+            }
         }
-        this._sdElements.add(sde) //TODO
-        return this;
+        return Builder;
     }
 
     toSyslogMessage(messageFormat){
@@ -228,7 +259,7 @@ class SyslogMessage {
      */
     toRfc5424SyslogMessage(){
 
-        let stringWriter = Buffer.alloc(this._msg == null ? 32 : this._msg.size() + 32);
+        let stringWriter = Buffer.alloc(this._msg == null ? 32 : this._msg.length + 32);
         try {
             this.toRfc5424SyslogMessagewithWriter(stringWriter);
         }
@@ -256,32 +287,32 @@ class SyslogMessage {
         offset += pri.toString().length; // Move the marker after number of chars in the PRI value
         out.write('>', offset++);
         out.write('1', offset++); // Version
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         //TODO: Replace the RFC3339DateFormat
-        let rfc3339timeStamp = (this._timestamp == null ? rfc3339DateFormat(new Date()) : rfc3339DateFormat(new Date(this._timestamp)));
+        let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
         out.write(rfc3339timeStamp, offset);
         offset += rfc3339timeStamp.toString().length;
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         // set the hostname
         this._hostname == null ? await this.localhostNameReference.getData() : this._hostname; // 
         out.write(this._hostname, offset);
         offset += this._hostname.length;
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         //appname
         let appTemp = this.writeNillableValue(this._appName, out, offset);
         offset = appTemp.offset;
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         //PID
         let proTemp = this.writeNillableValue(this._procId, out, offset);
         offset = proTemp.offset;
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         //msgID
         let msgTemp = this.writeNillableValue(this._msgId, out, offset);
         offset = msgTemp.offset;
-        out.write(this.SP, offset++);
+        out.write(SyslogMessage.SP, offset++);
         //write SD
-        let ssdeTemp = writeStructureDataOrNillableValue(this._sdElements, out, offset);
-        
+        let ssdeTemp = this.writeStructureDataOrNillableValue(this._sdElements, out, offset);
+        return out;
     }
 
     /**
@@ -293,7 +324,7 @@ class SyslogMessage {
      */
     writeNillableValue(value, out, offset){
         if(value == null){
-            out.write(this.NILVALUE, offset);
+            out.write(SyslogMessage.NILVALUE, offset);
             offset++;
             return {out: out, offset: offset};
         }
@@ -311,7 +342,7 @@ class SyslogMessage {
      */
      writeStructureDataOrNillableValue(sdElementSet, out, offset){
          if(sdElementSet == null || sdElementSet.size == 0){
-             out.write(this.NILVALUE, offset);
+             out.write(SyslogMessage.NILVALUE, offset);
              offset++;
              return{out, offset};
          } else{
@@ -346,9 +377,7 @@ class SyslogMessage {
       * @param {Number} offset
       */
       writeSDParam(sdp, out, offset){
-          console.log(sdp)
-          let SP = ' ';
-          out.write(SP, offset++);
+          out.write(SyslogMessage.SP, offset++);
           out.write(sdp.getParamName(), offset);
           offset += sdp.getParamName().toString().length;
           out.write('=', offset++);
