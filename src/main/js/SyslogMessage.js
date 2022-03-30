@@ -21,6 +21,8 @@ const { RFC_3164, RFC_5424, RFC_5425 } = require("./MessageFormat");
 const MessageFormat = require("./MessageFormat");
 const FetchHost = require('../../util/FetchHost');
 const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
+const SDParam = require("./SDParam");
+const SDElement = require("./SDElement");
 
 
 let _facility;
@@ -241,7 +243,7 @@ class SyslogMessage {
     /**
      * 
      * @param {Buffer} out  
-     * uses UTF-8 by default. 
+     * uses UTF-8 by default. @todo SD must be ASCII, however, PARAM-VALUE in UTF-8
      * Keep in mind that some characters may occupy more than one byte in the buffer like é
      * @todo possible enhancement
      */
@@ -266,20 +268,20 @@ class SyslogMessage {
         offset += this._hostname.length;
         out.write(this.SP, offset++);
         //appname
-        let appTemp = this.writeNilableValue(this._appName, out, offset);
+        let appTemp = this.writeNillableValue(this._appName, out, offset);
         offset = appTemp.offset;
         out.write(this.SP, offset++);
         //PID
-        let proTemp = this.writeNilableValue(this._procId, out, offset);
+        let proTemp = this.writeNillableValue(this._procId, out, offset);
         offset = proTemp.offset;
         out.write(this.SP, offset++);
         //msgID
-        let msgTemp = this.writeNilableValue(this._msgId, out, offset);
+        let msgTemp = this.writeNillableValue(this._msgId, out, offset);
         offset = msgTemp.offset;
         out.write(this.SP, offset++);
         //write SD
-        writeStructureDataOrNillableValue(sdElements, out);
-
+        let ssdeTemp = writeStructureDataOrNillableValue(this._sdElements, out, offset);
+        
     }
 
     /**
@@ -289,7 +291,7 @@ class SyslogMessage {
      * @param {Number} offset 
      * @returns {Buffer, Number}
      */
-    writeNilableValue(value, out, offset){
+    writeNillableValue(value, out, offset){
         if(value == null){
             out.write(this.NILVALUE, offset);
             offset++;
@@ -304,46 +306,81 @@ class SyslogMessage {
 
     /**
      * 
-     * @param {*} sdElements 
-     * @param {*} out 
+     * @param {Set<SDElement>} sdElement 
+     * @param {Buffer} out 
      */
-     writeStructureDataOrNillableValue(sdElement, out){
-         if(sdElement == null || sdElement.isEmpty()){
-             
-         }
-
-     }
+     writeStructureDataOrNillableValue(sdElementSet, out, offset){
+         if(sdElementSet == null || sdElementSet.size == 0){
+             out.write(this.NILVALUE, offset);
+             offset++;
+             return{out, offset};
+         } else{
+             for(const value of sdElementSet){
+                writeSDElement(sde, out, offset)
+              }
+            }
+        }
 
      /**
       * 
-      * @param {*} sdElement 
-      * @param {*} out 
+      * @param {SDElement} sdElement 
+      * @param {Buffer} out 
       */
-     writeSDElement(sdElement, out){
-
-     }
+      writeSDElement(sde, out, offset){
+          out.write('[', offset++);
+          out.write(sde.getSdID(), offset)
+          offset += sde.getSdID().toString().length;
+          for(const sdp of sde.getSdParams()){
+              let sdpTemp = writeSDParam(sdp, out, offset);
+              offset +=  sdpTemp.offset;
+              //console.log('Offset temp in for loop',offset)
+            }
+          out.write(']',offset++);
+        //return {offset}; // TODO: This might helpful for more than SDELlement 
+    }
      
      /**
       * 
-      * @param {*} sdParam 
-      * @param {*} out 
+      * @param {SDParam} sdParam 
+      * @param {Buffer} out 
+      * @param {Number} offset
       */
-     writeSDParam(sdParam, out){
-
-     }
+      writeSDParam(sdp, out, offset){
+          console.log(sdp)
+          let SP = ' ';
+          out.write(SP, offset++);
+          out.write(sdp.getParamName(), offset);
+          offset += sdp.getParamName().toString().length;
+          out.write('=', offset++);
+          out.write('"', offset++);
+          out.write(getEscapedParamValue(sdp.getParamValue()), offset)
+          offset+= sdp.getParamValue().toString().length;
+          out.write('"', offset++); 
+        return {offset};
+      }
 
      /**
       * 
-      * @param {*} paramValue 
+      * @param {string} paramValue 
+      * @returns {string} sb
       */
-     getEscapedParamValue(paramValue){
-
-     }
-    
-
-
-
-
+    getEscapedParamValue(paramValue){ 
+        let sb = new StringBuilder();
+        for(let i = 0; i < paramValue.length; i++){
+            let c = paramValue.charAt(i);
+            switch(c){
+                case '"' : 
+                case '\\':
+                case ']':
+                    sb.append('\\');
+                    break;
+                default:
+                    break;
+            }
+        sb.append(c);
+    }
+    return sb.toString();
+   }
 
 }
 module.exports = SyslogMessage;

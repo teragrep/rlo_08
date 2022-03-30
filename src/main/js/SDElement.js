@@ -20,7 +20,7 @@ const SDParam = require("./SDParam");
 
  const internals = {};
  let _sdID;
- let _sdParams = [];
+ let _sdParams;
  let _unmodifiableList = ['timeQuality', 'origin','meta'];
  let _RESERVED_SDID;
  
@@ -31,9 +31,10 @@ const SDParam = require("./SDParam");
          if(arguments.length === 1){
              validateSDID(sdID, this._RESERVED_SDID); // Pass the SDID to the private validate method, due to accessor concern
              this._sdID = sdID;
+             this._sdParams = []; // init the empty array holder
          }
          else {
-             validateSDID(sdID. this._RESERVED_SDID);
+             validateSDID(sdID, this._RESERVED_SDID);
              this._sdID = sdID;
              this._sdParams = [...sdParams];
          }        
@@ -69,7 +70,7 @@ const SDParam = require("./SDParam");
       * @returns SDParam
       */
      addSDParam(paramName, paramValue){
-         return addSDSingleParam(new SDParam(paramName, paramValue));
+         return this.addSDSingleParam(new SDParam(paramName, paramValue));
      }
 
      /**
