@@ -23,7 +23,7 @@ const FetchHost = require('../../util/FetchHost');
 const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
 const SDParam = require("./SDParam");
 const SDElement = require("./SDElement");
-
+const StringBuilder = require('../../lib/StringBuilder')
 
 let _facility;
 let _severity;
@@ -279,7 +279,7 @@ class SyslogMessage {
      * @todo possible enhancement
      */
     async toRfc5424SyslogMessagewithWriter(out) {
-        
+        return new Promise(async(resolve, reject) =>{
         let offset = 0; // Marker to locate the position to write
         let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
         out.write('<', offset++); // write the 1st char and move the marker to the next writeable location
@@ -294,7 +294,12 @@ class SyslogMessage {
         offset += rfc3339timeStamp.toString().length;
         out.write(SyslogMessage.SP, offset++);
         // set the hostname
-        this._hostname == null ? await this.localhostNameReference.getData() : this._hostname; // 
+        if(this._hostname == null){
+       //     console.log(SyslogMessage.localhostNameReference.getData())
+            this._hostname = await SyslogMessage.localhostNameReference.getData(); //TODO: Flaw on the control flow
+        }
+        //this._hostname == null ? await SyslogMessage.localhostNameReference.getData() : this._hostname; // 
+        //console.log(this._hostname.length);
         out.write(this._hostname, offset);
         offset += this._hostname.length;
         out.write(SyslogMessage.SP, offset++);
@@ -312,8 +317,8 @@ class SyslogMessage {
         out.write(SyslogMessage.SP, offset++);
         //write SD
         let ssdeTemp = this.writeStructureDataOrNillableValue(this._sdElements, out, offset);
-        return out;
-    }
+        resolve(out);
+ })}
 
     /**
      * @todo transform to private method
@@ -346,8 +351,8 @@ class SyslogMessage {
              offset++;
              return{out, offset};
          } else{
-             for(const value of sdElementSet){
-                writeSDElement(sde, out, offset)
+             for(const sde of sdElementSet){
+                this.writeSDElement(sde, out, offset)
               }
             }
         }
@@ -362,7 +367,7 @@ class SyslogMessage {
           out.write(sde.getSdID(), offset)
           offset += sde.getSdID().toString().length;
           for(const sdp of sde.getSdParams()){
-              let sdpTemp = writeSDParam(sdp, out, offset);
+              let sdpTemp = this.writeSDParam(sdp, out, offset);
               offset +=  sdpTemp.offset;
               //console.log('Offset temp in for loop',offset)
             }
@@ -382,7 +387,7 @@ class SyslogMessage {
           offset += sdp.getParamName().toString().length;
           out.write('=', offset++);
           out.write('"', offset++);
-          out.write(getEscapedParamValue(sdp.getParamValue()), offset)
+          out.write(this.getEscapedParamValue(sdp.getParamValue()), offset)
           offset+= sdp.getParamValue().toString().length;
           out.write('"', offset++); 
         return {offset};

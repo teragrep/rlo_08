@@ -32,23 +32,23 @@ class CachingReference {
 
     }
     isCacheExpired() {
-        console.log(this.fetchDate.getTime() + this.timeToLiveInMillis)
+        //console.log(this.fetchDate.getTime() + this.timeToLiveInMillis)
         return (this.fetchDate.getTime() + this.timeToLiveInMillis < new Date())
     }
 
     async getData() {
         if(!this.cache || this.isCacheExpired()){
-            console.log('Expired - Fetching the hostname')
+            //console.log('Expired - Fetching the hostname')
             return this.fetchHost()
                 .then((data) => {
-                    console.log(data, new Date())
+                    //console.log(data, new Date())
                     this.cache = data;
                     this.fetchDate = new Date();
                     return Promise.resolve(this.cache); // TODO: Check for the flaw ☢️
                  });
         } 
         else {
-            console.log('From Cache '+this.cache)
+          //  console.log('From Cache '+this.cache)
             return Promise.resolve(this.cache);
         }
     }
