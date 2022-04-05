@@ -146,7 +146,7 @@ const SDParam = require("./SDParam");
     });
 
      //let sdName = new String(sdNameParam); // Ensure the string content
-     console.log('From validateSDID '+sdName + ' '+ RESERVED_SDID)
+     //console.log('From validateSDID '+sdName + ' '+ RESERVED_SDID)
      
      if(sdName == null){
          throw new Error("SD-ID cannot be null")

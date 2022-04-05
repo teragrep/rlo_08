@@ -36,28 +36,22 @@ let _sdElements; //Set datastructure
 let _msg; //charArrayWriter
 
 /**
- * @todo enhance the implementation with Builder design pattern, handling writeSDElement, paramvalue...
+ * @todo enhance the implementation with similar CharArrayWriter, handling null of the hostname, 
+ * ಠ_ಠ concurrency might not take much fluence this time, but keep the place for the consideration.
+ * ⚠️ check for the potential security flaws.☢️☢️
+ * Serialization **** Multiple connection thread, separation of concern 
+ *  
+ * @Done Builder design pattern, handling writeSDElement, paramvalue.
  * 
  */
 class SyslogMessage {
 
     static SP = ' ';
     static NILVALUE = '-';
-    static DEFAULT_CONCURRENCY = 50; // TODO: NA?? TBD
     static rfc3339DateFormat = RFC3339DateFormat;
     static rfc3164DateFormat; // TODO: later
-    /**
-     * @todo 
-     * 1 - Create the cachingReference similar with java implementation // Drop this feature
-     * set method HostName 
-     * OverEngineered, wrap the necessary params
-     * 2 - concurrency???
-     * 
-     */
     static localhostNameReference = new CachingReference(FetchHost);  //  get the host name and refresh every 10
-    static concurrncy; // Need to set the concurrency, rfc3339, rfc3164 DateFormat
-
-    
+  
     
     /*
     * According to <a href="http://tools.ietf.org/html/rfc3164#section-4.1.2">RFC31614- 4.1.2 HEADER Part of a syslog Packet</a>,
@@ -194,10 +188,19 @@ class SyslogMessage {
              * 
              * @param {Date} timestamp 
              */
-            withDateTimeStamp(timestamp){
+            withDateTimestamp(timestamp){
                 if(timestamp instanceof Date){
-                    this._timestamp = timestamp == null ? null : timestamp.getTime();
+                    if(timestamp == null){
+                        this._timestamp = null;
+                        return this;
+                    }
+                    else {
+                        timestamp = new Date(timestamp);
+                        this._timestamp = timestamp == null ? null : timestamp.getTime();
+                        return this;
+                    }
                 }
+                return this;
             }
 
             withHostname(hostname){
@@ -271,61 +274,74 @@ class SyslogMessage {
 
     }
 
+    async getHost(){
+        let hostname = SyslogMessage.localhostNameReference.getData();
+        this._hostname = hostname;
+        return this._hostname
+    }
+
     /**
      * 
      * @param {Buffer} out  
      * uses UTF-8 by default. @todo SD must be ASCII, however, PARAM-VALUE in UTF-8
      * Keep in mind that some characters may occupy more than one byte in the buffer like é
      * @todo possible enhancement
+     * Performance??? Serialization???
      */
-    async toRfc5424SyslogMessagewithWriter(out) {
+    toRfc5424SyslogMessagewithWriter(out) {
         return new Promise(async(resolve, reject) =>{
-        let offset = 0; // Marker to locate the position to write
-        let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
-        out.write('<', offset++); // write the 1st char and move the marker to the next writeable location
-        out.write(pri.toString(), offset);
-        offset += pri.toString().length; // Move the marker after number of chars in the PRI value
-        out.write('>', offset++);
-        out.write('1', offset++); // Version
-        out.write(SyslogMessage.SP, offset++);
-        //TODO: Replace the RFC3339DateFormat
-        let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
-        out.write(rfc3339timeStamp, offset);
-        offset += rfc3339timeStamp.toString().length;
-        out.write(SyslogMessage.SP, offset++);
-        // set the hostname
-        if(this._hostname == null){
-       //     console.log(SyslogMessage.localhostNameReference.getData())
-            this._hostname = await SyslogMessage.localhostNameReference.getData(); //TODO: Flaw on the control flow
-        }
-        //this._hostname == null ? await SyslogMessage.localhostNameReference.getData() : this._hostname; // 
-        //console.log(this._hostname.length);
-        out.write(this._hostname, offset);
-        offset += this._hostname.length;
-        out.write(SyslogMessage.SP, offset++);
-        //appname
-        let appTemp = this.writeNillableValue(this._appName, out, offset);
-        offset = appTemp.offset;
-        out.write(SyslogMessage.SP, offset++);
-        //PID
-        let proTemp = this.writeNillableValue(this._procId, out, offset);
-        offset = proTemp.offset;
-        out.write(SyslogMessage.SP, offset++);
-        //msgID
-        let msgTemp = this.writeNillableValue(this._msgId, out, offset);
-        offset = msgTemp.offset;
-        out.write(SyslogMessage.SP, offset++);
-        //write SD
-        let ssdeTemp = this.writeStructureDataOrNillableValue(this._sdElements, out, offset);
-        resolve(out);
- })}
+            let offset = 0; // Marker to locate the position to write
+            let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
+            out.write('<', offset++); // write the 1st char and move the marker to the next writeable location
+            out.write(pri.toString(), offset);
+            offset += pri.toString().length; // Move the marker after number of chars in the PRI value
+            out.write('>', offset++);
+            out.write('1', offset++); // Version
+            out.write(SyslogMessage.SP, offset++);
+            // RFC3339DateFormat
+            let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
+            out.write(rfc3339timeStamp, offset);
+            offset += rfc3339timeStamp.toString().length;
+            out.write(SyslogMessage.SP, offset++);
+            // set the hostname
+            if(this._hostname == null){
+                    // console.log(SyslogMessage.localhostNameReference.getData())
+                    this._hostname = await SyslogMessage.localhostNameReference.getData(); //TODO: Flaw on the control flow
+                   // resolve(this._hostname);
+            }
+            console.log(this._hostname);
+            //this._hostname == null ? await SyslogMessage.localhostNameReference.getData() : this._hostname; // 
+            //console.log(this._hostname.length);
+            out.write(this._hostname, offset);
+            offset += this._hostname.length;
+            out.write(SyslogMessage.SP, offset++);
+            //appname
+            let appTemp = this.writeNillableValue(this._appName, out, offset);
+            offset = appTemp.offset;
+            out.write(SyslogMessage.SP, offset++);
+         //   console.log(out.toString())
+            //PID
+            let proTemp = this.writeNillableValue(this._procId, out, offset);
+            offset = proTemp.offset;
+            out.write(SyslogMessage.SP, offset++);
+            //msgID
+            let msgTemp = this.writeNillableValue(this._msgId, out, offset);
+            offset = msgTemp.offset;
+            out.write(SyslogMessage.SP, offset++);
+           
+            //write SD
+            let ssdeTemp = this.writeStructureDataOrNillableValue(this._sdElements, out, offset);
+           // console.log(out.toString())
+            resolve(out);
+        })
+    }
 
     /**
      * @todo transform to private method
      * @param {string} value 
      * @param {Buffer} out 
      * @param {Number} offset 
-     * @returns {Buffer, Number}
+     * @returns {Buffer, Number} { out, offset }
      */
     writeNillableValue(value, out, offset){
         if(value == null){
@@ -369,7 +385,6 @@ class SyslogMessage {
           for(const sdp of sde.getSdParams()){
               let sdpTemp = this.writeSDParam(sdp, out, offset);
               offset +=  sdpTemp.offset;
-              //console.log('Offset temp in for loop',offset)
             }
           out.write(']',offset++);
         //return {offset}; // TODO: This might helpful for more than SDELlement 
