@@ -23,7 +23,10 @@ const FetchHost = require('../../util/FetchHost');
 const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
 const SDParam = require("./SDParam");
 const SDElement = require("./SDElement");
-const StringBuilder = require('../../lib/StringBuilder')
+const StringBuilder = require('../../lib/StringBuilder');
+const { findSourceMap } = require("module");
+const { resolve } = require("path/posix");
+const { reject } = require("async");
 
 let _facility;
 let _severity;
@@ -254,17 +257,24 @@ class SyslogMessage {
 
     /**
      * 
-     * 
+     *  
      * Generates an <a href="http://tools.ietf.org/html/rfc5424">RFC-5424</
      * ,a> message.
      * 
      * 
      */
-    toRfc5424SyslogMessage(){
+     async toRfc5424SyslogMessage(){
+
 
         let stringWriter = Buffer.alloc(this._msg == null ? 32 : this._msg.length + 32);
         try {
-            this.toRfc5424SyslogMessagewithWriter(stringWriter);
+            //this.toRfc5424SyslogMessagewithWriter(stringWriter);
+           //this.toRfc5424SyslogMessagePromise(stringWriter);
+
+
+           let buffer =  await this.toPromiseAll();
+           return buffer;
+
         }
         catch(err){
             throw new Error()
@@ -274,11 +284,140 @@ class SyslogMessage {
 
     }
 
-    async getHost(){
-        let hostname = SyslogMessage.localhostNameReference.getData();
-        this._hostname = hostname;
-        return this._hostname
+    /**
+     * 
+     * @returns 
+     */
+    priVerFirstPromise(){
+        return new Promise(async(resolve, reject) => {
+            let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
+            let firstBufferLength = pri.toString().length + 4;
+            var firstBuffer = Buffer.alloc(firstBufferLength);
+            let pos = 0;
+            firstBuffer.write('<', pos++);
+            firstBuffer.write(pri.toString(), pos++);
+            pos += pri.toString().length;
+            firstBuffer.write('>', pos++);
+            firstBuffer.write('1', pos++);
+            firstBuffer.write(SyslogMessage.SP, pos++);
+            resolve(firstBuffer);
+        })       
     }
+
+    /**
+     * 
+     * @returns 
+     */
+    dateSecondPromise(){
+        return new Promise(async(resolve, reject) => {
+            
+            let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
+            let bufferLength = rfc3339timeStamp.toString().length + 1;
+            let pos = 0;
+            let secondBuffer = Buffer.alloc(bufferLength);
+            secondBuffer.write(SyslogMessage.SP, pos++);
+            secondBuffer.write(rfc3339timeStamp.toString(), pos++);
+            resolve(secondBuffer)
+        })
+
+    }
+
+    /**
+     * 
+     * @returns 
+     */
+    hostThirdPromise(){
+        return new Promise(async(resolve, reject) =>{
+            if(this._hostname == null){
+                this._hostname = await SyslogMessage.localhostNameReference.getData();
+            }
+            let bufferLength = this._hostname.toString().length + 1;
+            let pos = 0;
+            let thirdBuffer = Buffer.alloc(bufferLength);
+            thirdBuffer.write(SyslogMessage.SP, pos++);
+            thirdBuffer.write(this._hostname.toString(),pos);
+            resolve(thirdBuffer);
+        })
+    }
+
+    /**
+     * 
+     * @returns 
+     */
+    appFourthPromise(){
+        return new Promise(async(resolve, reject) => {
+            let appName = this.writeNillableValue(this._appName);
+            resolve(appName);
+        })
+    }
+
+    /**
+     * 
+     * @returns 
+     */
+    pidFifthPromise(){
+        return new Promise(async(resolve, reject) => {
+            let pId = this.writeNillableValue(this._procId);
+            resolve(pId);
+        })
+    }
+
+    /**
+     * 
+     * @returns 
+     */
+
+    msgSixthPromise(){
+        return new Promise(async(resolve, reject) => {
+            let msgID = this.writeNillableValue(this._msgId);
+            resolve(msgID);
+        })
+    }
+
+    /**
+     * 
+     * @returns {SDElement} 
+     */
+    sdSeventhPromise(){
+        return new Promise(async(resolve, reject) => {
+            //write SD
+            let ssde = this.writeStructureDataOrNillableValue(this._sdElements);
+            resolve(ssde);
+        })
+    }
+
+    /**
+     * Promise all still could not control the flow, structure the message format
+     */
+    
+    toPromiseAll(){
+         return new Promise(async(resolve, reject) => {
+            let completBuffer = [];
+            let firstBuffer;
+            let secondBuffer;
+            let thirdBuffer;
+            let fourthBuffer;
+            let fifthBuffer;
+            let sixthBuffer;
+            let seventhBuffer;
+    
+    
+            firstBuffer = await this.priVerFirstPromise();
+            secondBuffer = await this.dateSecondPromise();
+            thirdBuffer = await this.hostThirdPromise();
+            fourthBuffer = await this.appFourthPromise();
+            fifthBuffer = await this.pidFifthPromise();
+            sixthBuffer = await this.msgSixthPromise();
+            seventhBuffer = await this.sdSeventhPromise();
+    
+            let len = firstBuffer.toString().length + secondBuffer.toString().length + thirdBuffer.toString().length
+                        + fourthBuffer.toString().length + fifthBuffer.toString().length + sixthBuffer.toString().length + seventhBuffer.toString().length;
+            let tempBuffer = Buffer.concat([firstBuffer, secondBuffer, thirdBuffer, fourthBuffer, fifthBuffer, sixthBuffer, seventhBuffer],len)
+            //console.log('Buffer concat ', tempBuffer.toString())
+            resolve(tempBuffer)
+         })
+    }
+
 
     /**
      * 
@@ -287,126 +426,116 @@ class SyslogMessage {
      * Keep in mind that some characters may occupy more than one byte in the buffer like é
      * @todo possible enhancement
      * Performance??? Serialization???
+     * interesting behavior in the async function await cycle, 
+     *  fix with Promise.all method
      */
-    toRfc5424SyslogMessagewithWriter(out) {
-        return new Promise(async(resolve, reject) =>{
-            let offset = 0; // Marker to locate the position to write
-            let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
-            out.write('<', offset++); // write the 1st char and move the marker to the next writeable location
-            out.write(pri.toString(), offset);
-            offset += pri.toString().length; // Move the marker after number of chars in the PRI value
-            out.write('>', offset++);
-            out.write('1', offset++); // Version
-            out.write(SyslogMessage.SP, offset++);
-            // RFC3339DateFormat
-            let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
-            out.write(rfc3339timeStamp, offset);
-            offset += rfc3339timeStamp.toString().length;
-            out.write(SyslogMessage.SP, offset++);
-            // set the hostname
-            if(this._hostname == null){
-                    // console.log(SyslogMessage.localhostNameReference.getData())
-                    this._hostname = await SyslogMessage.localhostNameReference.getData(); //TODO: Flaw on the control flow
-                   // resolve(this._hostname);
-            }
-            console.log(this._hostname);
-            //this._hostname == null ? await SyslogMessage.localhostNameReference.getData() : this._hostname; // 
-            //console.log(this._hostname.length);
-            out.write(this._hostname, offset);
-            offset += this._hostname.length;
-            out.write(SyslogMessage.SP, offset++);
-            //appname
-            let appTemp = this.writeNillableValue(this._appName, out, offset);
-            offset = appTemp.offset;
-            out.write(SyslogMessage.SP, offset++);
-         //   console.log(out.toString())
-            //PID
-            let proTemp = this.writeNillableValue(this._procId, out, offset);
-            offset = proTemp.offset;
-            out.write(SyslogMessage.SP, offset++);
-            //msgID
-            let msgTemp = this.writeNillableValue(this._msgId, out, offset);
-            offset = msgTemp.offset;
-            out.write(SyslogMessage.SP, offset++);
-           
-            //write SD
-            let ssdeTemp = this.writeStructureDataOrNillableValue(this._sdElements, out, offset);
-           // console.log(out.toString())
-            resolve(out);
-        })
-    }
 
     /**
-     * @todo transform to private method
-     * @param {string} value 
-     * @param {Buffer} out 
-     * @param {Number} offset 
-     * @returns {Buffer, Number} { out, offset }
+     * 
      */
-    writeNillableValue(value, out, offset){
+    writeNillableValue(value){
+        let pos = 0;
+        let buffer;
         if(value == null){
-            out.write(SyslogMessage.NILVALUE, offset);
-            offset++;
-            return {out: out, offset: offset};
+            buffer = Buffer.alloc(2)
+            buffer.write(SyslogMessage.SP, pos++);
+            buffer.write(SyslogMessage.NILVALUE, pos++);
+            return buffer;
         }
         else {
-            out.write(value, offset);
-            offset += value.length;
-            return {out, offset};
+            let bufferLength = value.length + 1;
+            buffer = Buffer.alloc(bufferLength);
+            buffer.write(SyslogMessage.SP, pos++);
+            buffer.write(value, pos++);
+            return buffer;
         }
     }
 
     /**
      * 
-     * @param {Set<SDElement>} sdElement 
-     * @param {Buffer} out 
+     * @param {*} sdElementSet 
+     * @returns 
      */
-     writeStructureDataOrNillableValue(sdElementSet, out, offset){
-         if(sdElementSet == null || sdElementSet.size == 0){
-             out.write(SyslogMessage.NILVALUE, offset);
-             offset++;
-             return{out, offset};
-         } else{
-             for(const sde of sdElementSet){
-                this.writeSDElement(sde, out, offset)
-              }
-            }
+    writeStructureDataOrNillableValue(sdElementSet){
+        let pos = 0;
+        let buffer;
+        if(sdElementSet == null || sdElementSet.size == 0){
+            buffer = Buffer.alloc(2)
+            
+            buffer.write(SyslogMessage.NILVALUE, pos++);
+            return buffer;
+        } else{
+            for(const sde of sdElementSet){
+             buffer =  this.writeSDElement(sde)
+             }
+             return buffer;
         }
-
-     /**
-      * 
-      * @param {SDElement} sdElement 
-      * @param {Buffer} out 
-      */
-      writeSDElement(sde, out, offset){
-          out.write('[', offset++);
-          out.write(sde.getSdID(), offset)
-          offset += sde.getSdID().toString().length;
-          for(const sdp of sde.getSdParams()){
-              let sdpTemp = this.writeSDParam(sdp, out, offset);
-              offset +=  sdpTemp.offset;
-            }
-          out.write(']',offset++);
-        //return {offset}; // TODO: This might helpful for more than SDELlement 
     }
-     
-     /**
-      * 
-      * @param {SDParam} sdParam 
-      * @param {Buffer} out 
-      * @param {Number} offset
-      */
-      writeSDParam(sdp, out, offset){
-          out.write(SyslogMessage.SP, offset++);
-          out.write(sdp.getParamName(), offset);
-          offset += sdp.getParamName().toString().length;
-          out.write('=', offset++);
-          out.write('"', offset++);
-          out.write(this.getEscapedParamValue(sdp.getParamValue()), offset)
-          offset+= sdp.getParamValue().toString().length;
-          out.write('"', offset++); 
-        return {offset};
-      }
+
+    /**
+     * 
+     * @param {SDElement} sde 
+     * @returns 
+     */
+    writeSDElement(sde){      
+        let sdLength = this.getSdLength(sde);
+        let buffer = Buffer.alloc(sdLength);
+        let pos = 0;
+        buffer.write(SyslogMessage.SP, pos++);
+        buffer.write('[', pos++);
+        buffer.write(sde.getSdID(), pos)
+        pos += sde.getSdID().toString().length;
+        for(const sdp of sde.getSdParams()){
+            let sdpTemp = this.writeSDParam(sdp, buffer, pos);
+            pos =  sdpTemp.pos;
+        }
+        buffer.write(']',pos++);
+        return buffer;
+    }
+
+    /**
+     * This methods returns the length which set buffer size 
+     * @param {SDElement} sde 
+     * @returns {Number} 
+     */
+    getSdLength(sde){
+        let length = sde.getSdID().toString().length + 2;
+        let sdpRes = 0;
+        for(const sdp of sde.getSdParams()){
+            sdpRes = this.getSdParamLength(sdp);
+            length += sdpRes;
+        }
+        return length;
+    }
+
+    /**
+     * 
+     * @param {SDParam} sdp 
+     * @returns {Number} length
+     */
+    getSdParamLength(sdp){
+        let length = sdp.getParamName().toString().length + sdp.getParamValue().toString().length + 5;
+        return length;
+    }
+        
+    /**
+     * 
+     * @param {*} sdp 
+     * @param {*} buffer 
+     * @param {*} pos 
+     * @returns 
+     */
+    writeSDParam(sdp, buffer, pos){
+        buffer.write(SyslogMessage.SP, pos++);
+        buffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
+        pos += sdp.getParamName().toString().length;
+        buffer.write('=', pos++);
+        buffer.write('"', pos++);
+        buffer.write(this.getEscapedParamValue(sdp.getParamValue()), pos)
+        pos+= sdp.getParamValue().toString().length;
+        buffer.write('"', pos++); 
+        return {out: buffer, pos: pos};
+    }
 
      /**
       * 
