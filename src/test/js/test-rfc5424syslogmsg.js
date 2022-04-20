@@ -17,15 +17,18 @@ let message = new SyslogMessage.Builder()
         .withHostname('iris.teragrep.com') //null for the hostname does not produce the expected message, however, getData() get the hostname????
         .withFacility(Facility.LOCAL0)
         .withSeverity(Severity.INFORMATIONAL)
+        //.withProcId('8740')
+       // .withMsgId('ID47')
         .withMsg('Todays lucky number is 17649276') // Fixed
-        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"), new SDParam("eventID", "1011"), new SDParam("eventID", "1012"))) // Fix the space before the previous 
+        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"), new SDParam("eventID", "1011"))) // Fix the space before the previous 
         .withDateTimestamp(dateFormat)
         .build()
 
 
+let rfc5424message;
  async function load() {
-    let rfc5424message = await message.toRfc5424SyslogMessage();
-    console.log(rfc5424message.toString());
+    rfc5424message = await message.toRfc5424SyslogMessage();
+    console.log(rfc5424message);
 }
 
 load();

@@ -1,3 +1,4 @@
+const { checkPrimeSync } = require("crypto");
 
 var charArray;
 var typedArray;
@@ -8,7 +9,7 @@ class CharArrayWriter{
     constructor(initialSize){
 
         if(arguments.length == 0){
-            console.log('0 Argument')
+            this.charArray = [];
         }
 
         if(arguments.length === 1) {
@@ -64,17 +65,54 @@ class CharArrayWriter{
 
     }
 
-    write(){
+    write(char, off, len){
+        if(arguments.length === 1) {
+            if(char.length == 1){
+                this.charArray.push(char);
+                console.log('CharArrayWriter write ', char)
+                console.log(this.charArray)
+            }
+            else{
+                throw new Error('Check Char length')
+            }
+            
+        }
 
+        else {
+            
+            let str = char;
+
+            for(let i=0; i < len; i++){
+                this.charArray.push(str[off])
+                off++;
+            }
+
+
+            console.log('CharArrayWriter write str ', char)
+
+        }
+
+
+
+    }
+
+    writeTo(des){
+        if( des instanceof Buffer){
+            let pos = des.byteLength;
+            let bufSize = (pos + this.size() + 1);
+            let buffer = Buffer.alloc(bufSize);
+            des.copy(buffer, 0);
+            buffer.write(' ', pos++);
+            buffer.write(this.toJoin(), pos);
+            return buffer;
+        }
     }
 
     size(){
-
         return this.charArray.length;
-
     }
 
-    toString(){
+    toJoin(){
         if(this.charArray.length > 1){
             return this.charArray.join('');
         }
