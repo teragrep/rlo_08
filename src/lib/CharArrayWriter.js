@@ -1,8 +1,3 @@
-const { checkPrimeSync } = require("crypto");
-
-var charArray;
-var typedArray;
-let count;
 
 class CharArrayWriter{
 
@@ -69,8 +64,6 @@ class CharArrayWriter{
         if(arguments.length === 1) {
             if(char.length == 1){
                 this.charArray.push(char);
-                console.log('CharArrayWriter write ', char)
-                console.log(this.charArray)
             }
             else{
                 throw new Error('Check Char length')
@@ -79,20 +72,13 @@ class CharArrayWriter{
         }
 
         else {
-            
             let str = char;
-
             for(let i=0; i < len; i++){
                 this.charArray.push(str[off])
                 off++;
             }
-
-
-            console.log('CharArrayWriter write str ', char)
-
+            //console.log('CharArrayWriter write str ', char)
         }
-
-
 
     }
 

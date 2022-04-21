@@ -24,9 +24,6 @@ const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
 const SDParam = require("./SDParam");
 const SDElement = require("./SDElement");
 const StringBuilder = require('../../lib/StringBuilder');
-const { findSourceMap } = require("module");
-const { resolve } = require("path/posix");
-const { reject } = require("async");
 const CharArrayWriter = require("../../lib/CharArrayWriter");
 
 let _facility;
@@ -233,7 +230,7 @@ class SyslogMessage {
             }
 
             /**
-             * @todo investigate for the need of similar java implementation of the charArrayWriter vs final String 
+             * 
              * @param {*} msg 
              * @returns 
              */
@@ -280,26 +277,21 @@ class SyslogMessage {
     /**
      * @todo 
      *  1 - Buffer is useful, but dangerous Track it carefully.... fill(0), in case if really big buffer, might be impact on the performance
-     *  2 - Make functions private
-     *  3 - BOM???
-     *  4 - Code clean up & refinement 
-     *  5 - Flexible, reallocation // toRfc5424SyslogMessgae // TLS: Use the standard out. Make the article
+     *  2 - Make functions private &  Code clean up & refinement 
+     *  3 - Flexible, reallocation // toRfc5424SyslogMessgae // TLS: Use the standard out. Make the article
+     *      Ok, resizing the buffer we can obtain, like copy the previous buffer content size with new arrival of the size 
+     * 
+     * Comment: create similar classes that for example Facility has for each of the message components so that they could do the serialization and validation
+     *           for their part i.e. hostname has length requirements and appName has too and both have as well allowed character range
      *   
-     * Generates an <a href="http://tools.ietf.org/html/rfc5424">RFC-5424</
-     * ,a> message.
+     * Generates an <a href="http://tools.ietf.org/html/rfc5424">RFC-5424</a> message.
      * 
      * 
      */
      async toRfc5424SyslogMessage(){
 
-
-     //   let stringWriter = Buffer.alloc(this._msg == null ? 32 : this._msg.length + 32);
         try {
-            //this.toRfc5424SyslogMessagewithWriter(stringWriter);
-           //this.toRfc5424SyslogMessagePromise(stringWriter);
-
-
-           let buffer =  await this.toPromiseAll();
+            let buffer =  await toPromiseAll.call(this);
            return buffer.toString();
 
         }
@@ -307,187 +299,10 @@ class SyslogMessage {
             throw new Error()
 
         }
-       // return stringWriter; // Lets return the buffer, so we can adjust the content 
-
     }
 
-    /**
-     * 
-     * @returns 
-     */
-    priVerFirstPromise(){
-        return new Promise(async(resolve, reject) => {
-            let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
-            let firstBufferLength = pri.toString().length + 4;
-            var firstBuffer = Buffer.alloc(firstBufferLength);
-            firstBuffer.fill(0);
-            let pos = 0;
-            firstBuffer.write('<', pos++);
-            firstBuffer.write(pri.toString(), pos++);
-            pos += pri.toString().length;
-            firstBuffer.write('>', pos++);
-            firstBuffer.write('1', pos++);
-           // firstBuffer.write(SyslogMessage.SP, pos++);
-            resolve(firstBuffer);
-        })       
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    dateSecondPromise(){
-        return new Promise(async(resolve, reject) => {
-            
-            let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
-            let bufferLength = rfc3339timeStamp.toString().length + 1;
-            let pos = 0;
-            let secondBuffer = Buffer.alloc(bufferLength);
-            secondBuffer.fill(0);
-            secondBuffer.write(SyslogMessage.SP, pos++);
-            secondBuffer.write(rfc3339timeStamp.toString(), pos++);
-            resolve(secondBuffer)
-        })
-
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    hostThirdPromise(){
-        return new Promise(async(resolve, reject) =>{
-            if(this._hostname == null){
-                this._hostname = await SyslogMessage.localhostNameReference.getData();
-            }
-            let bufferLength = this._hostname.toString().length + 1;
-            let pos = 0;
-            let thirdBuffer = Buffer.alloc(bufferLength);
-            thirdBuffer.fill(0);
-            thirdBuffer.write(SyslogMessage.SP, pos++);
-            thirdBuffer.write(this._hostname.toString(),pos);
-            resolve(thirdBuffer);
-        })
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    appFourthPromise(){
-        return new Promise(async(resolve, reject) => {
-            let appName = this.writeNillableValue(this._appName);
-            resolve(appName);
-        })
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    pidFifthPromise(){
-        return new Promise(async(resolve, reject) => {
-            let pId = this.writeNillableValue(this._procId);
-            resolve(pId);
-        })
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-
-    msgIdSixthPromise(){
-        return new Promise(async(resolve, reject) => {
-            let msgID = this.writeNillableValue(this._msgId);
-            resolve(msgID);
-        })
-    }
-
-    /**
-     * 
-     * @returns {SDElement} 
-     */
-    sdSeventhPromise(){
-        return new Promise(async(resolve, reject) => {
-            //write SD
-            let ssde = this.writeStructureDataOrNillableValue(this._sdElements);
-            resolve(ssde);
-        })
-    }
-
-    /**
-     * Promise all still could not control the flow, structure the message format
-     */
+ 
     
-    toPromiseAll(){
-         return new Promise(async(resolve, reject) => {
-            let firstBuffer;
-            let secondBuffer;
-            let thirdBuffer;
-            let fourthBuffer;
-            let fifthBuffer;
-            let sixthBuffer;
-            let seventhBuffer;
-    
-    
-            firstBuffer = await this.priVerFirstPromise();
-            secondBuffer = await this.dateSecondPromise();
-            thirdBuffer = await this.hostThirdPromise();
-            fourthBuffer = await this.appFourthPromise();
-            fifthBuffer = await this.pidFifthPromise();
-            sixthBuffer = await this.msgIdSixthPromise();
-            seventhBuffer = await this.sdSeventhPromise();
-    
-            let len = firstBuffer.toString().length + secondBuffer.toString().length + thirdBuffer.toString().length
-                        + fourthBuffer.toString().length + fifthBuffer.toString().length + sixthBuffer.toString().length + seventhBuffer.toString().length;
-            let tempBuffer = Buffer.concat([firstBuffer, secondBuffer, thirdBuffer, fourthBuffer, fifthBuffer, sixthBuffer, seventhBuffer],len)
-
-            if(this._msg != null){
-                let msgWriter = new CharArrayWriter();
-                msgWriter.write(this._msg, 0, this._msg.length);
-                tempBuffer =  msgWriter.writeTo(tempBuffer);      
-            }
-
-            resolve(tempBuffer)
-         })
-    }
-
-
-    /**
-     * 
-     * @param {Buffer} out  
-     * uses UTF-8 by default. @todo SD must be ASCII, however, PARAM-VALUE in UTF-8
-     * Keep in mind that some characters may occupy more than one byte in the buffer like é
-     * @todo possible enhancement
-     * Performance??? Serialization???
-     * interesting behavior in the async function await cycle, 
-     *  fix with Promise.all method
-     *    
-     */
-
-    /**
-     * 
-     */
-    writeNillableValue(value){
-        let pos = 0;
-        let buffer;
-        if(value == null){
-            buffer = Buffer.alloc(2)
-            buffer.write(SyslogMessage.SP, pos++);
-            buffer.write(SyslogMessage.NILVALUE, pos++);
-            return buffer;
-        }
-        else {
-            let bufferLength = value.length + 1;
-            buffer = Buffer.alloc(bufferLength);
-            buffer.fill(0);
-            buffer.write(SyslogMessage.SP, pos++);
-            buffer.write(value, pos++);
-            return buffer;
-        }
-    }
-
     /**
      * 
      * @param {*} sdElementSet 
@@ -601,3 +416,130 @@ class SyslogMessage {
 module.exports = SyslogMessage;
     
 
+function priVerFirstPromise(){
+    return new Promise(async(resolve, reject) => {
+        let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
+        let firstBufferLength = pri.toString().length + 4;
+        var firstBuffer = Buffer.alloc(firstBufferLength);
+        firstBuffer.fill(0);
+        let pos = 0;
+        firstBuffer.write('<', pos++);
+        firstBuffer.write(pri.toString(), pos++);
+        pos += pri.toString().length;
+        firstBuffer.write('>', pos++);
+        firstBuffer.write('1', pos++);
+        resolve(firstBuffer);
+    })       
+}
+
+
+function dateSecondPromise(){
+    return new Promise(async(resolve, reject) => {
+        
+        let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
+        let bufferLength = rfc3339timeStamp.toString().length + 1;
+        let pos = 0;
+        let secondBuffer = Buffer.alloc(bufferLength);
+        secondBuffer.fill(0);
+        secondBuffer.write(SyslogMessage.SP, pos++);
+        secondBuffer.write(rfc3339timeStamp.toString(), pos++);
+        resolve(secondBuffer)
+    })
+}
+
+function hostThirdPromise(){
+    return new Promise(async(resolve, reject) =>{
+        if(this._hostname == null){
+            this._hostname = await SyslogMessage.localhostNameReference.getData();
+        }
+        let bufferLength = this._hostname.toString().length + 1;
+        let pos = 0;
+        let thirdBuffer = Buffer.alloc(bufferLength);
+        thirdBuffer.fill(0);
+        thirdBuffer.write(SyslogMessage.SP, pos++);
+        thirdBuffer.write(this._hostname.toString(),pos);
+        resolve(thirdBuffer);
+    })
+}
+
+function writeNillableValue(value){
+    let pos = 0;
+    let buffer;
+    if(value == null){
+        buffer = Buffer.alloc(2)
+        buffer.write(SyslogMessage.SP, pos++);
+        buffer.write(SyslogMessage.NILVALUE, pos++);
+        return buffer;
+    }
+    else {
+        let bufferLength = value.length + 1;
+        buffer = Buffer.alloc(bufferLength);
+        buffer.fill(0);
+        buffer.write(SyslogMessage.SP, pos++);
+        buffer.write(value, pos++);
+        return buffer;
+    }
+}
+
+
+function appFourthPromise(){
+    return new Promise(async(resolve, reject) => {
+        let appName = writeNillableValue.call(this, this._appName);
+        resolve(appName);
+    })
+}
+
+function pidFifthPromise(){
+    return new Promise(async(resolve, reject) => {
+        let pId = writeNillableValue.call(this, this._procId);
+        resolve(pId);
+    })
+}
+
+function msgIdSixthPromise(){
+    return new Promise(async(resolve, reject) => {
+        let msgID = writeNillableValue.call(this, this._msgId);
+        resolve(msgID);
+    })
+}
+
+function sdSeventhPromise(){
+    return new Promise(async(resolve, reject) => {
+        //write SD
+        let ssde = this.writeStructureDataOrNillableValue(this._sdElements);
+        resolve(ssde);
+    })
+}
+
+function toPromiseAll(){
+    return new Promise(async(resolve, reject) => {
+       let firstBuffer;
+       let secondBuffer;
+       let thirdBuffer;
+       let fourthBuffer;
+       let fifthBuffer;
+       let sixthBuffer;
+       let seventhBuffer;
+
+
+       firstBuffer = await priVerFirstPromise.call(this); //await this.priVerFirstPromise();
+       secondBuffer = await dateSecondPromise.call(this);
+       thirdBuffer = await hostThirdPromise.call(this);
+       fourthBuffer = await appFourthPromise.call(this);
+       fifthBuffer = await pidFifthPromise.call(this);
+       sixthBuffer = await msgIdSixthPromise.call(this);
+       seventhBuffer = await sdSeventhPromise.call(this);
+
+       let len = firstBuffer.toString().length + secondBuffer.toString().length + thirdBuffer.toString().length
+                   + fourthBuffer.toString().length + fifthBuffer.toString().length + sixthBuffer.toString().length + seventhBuffer.toString().length;
+       let tempBuffer = Buffer.concat([firstBuffer, secondBuffer, thirdBuffer, fourthBuffer, fifthBuffer, sixthBuffer, seventhBuffer],len)
+
+       if(this._msg != null){
+           let msgWriter = new CharArrayWriter();
+           msgWriter.write(this._msg, 0, this._msg.length);
+           tempBuffer =  msgWriter.writeTo(tempBuffer);      
+       }
+
+       resolve(tempBuffer)
+    })
+}
