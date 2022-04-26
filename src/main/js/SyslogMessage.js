@@ -300,118 +300,7 @@ class SyslogMessage {
 
         }
     }
-
- 
     
-    /**
-     * 
-     * @param {*} sdElementSet 
-     * @returns 
-     */
-    writeStructureDataOrNillableValue(sdElementSet){
-        let pos = 0;
-        let buffer;
-        if(sdElementSet == null || sdElementSet.size == 0){
-            buffer = Buffer.alloc(2)
-            buffer.write(SyslogMessage.SP, pos++);
-            buffer.write(SyslogMessage.NILVALUE, pos++);
-            return buffer;
-        } else{
-            for(const sde of sdElementSet){
-             buffer =  this.writeSDElement(sde)
-             }
-             return buffer;
-        }
-    }
-
-    /**
-     * 
-     * @param {SDElement} sde 
-     * @returns 
-     */
-    writeSDElement(sde){      
-        let sdLength = this.getSdLength(sde);
-        let buffer = Buffer.alloc(sdLength);
-        let pos = 0;
-        buffer.write(SyslogMessage.SP, pos++);
-        buffer.write('[', pos++);
-        buffer.write(sde.getSdID(), pos)
-        pos += sde.getSdID().toString().length;
-        for(const sdp of sde.getSdParams()){
-            let sdpTemp = this.writeSDParam(sdp, buffer, pos);
-            pos =  sdpTemp.pos;
-        }
-        buffer.write(']',pos++);
-        return buffer;
-    }
-
-    /**
-     * This methods returns the length which set buffer size 
-     * @param {SDElement} sde 
-     * @returns {Number} 
-     */
-    getSdLength(sde){
-        let length = sde.getSdID().toString().length + 2;
-        let sdpRes = 0;
-        for(const sdp of sde.getSdParams()){
-            sdpRes = this.getSdParamLength(sdp);
-            length += sdpRes;
-        }
-        return length;
-    }
-
-    /**
-     * 
-     * @param {SDParam} sdp 
-     * @returns {Number} length
-     */
-    getSdParamLength(sdp){
-        let length = sdp.getParamName().toString().length + sdp.getParamValue().toString().length + 5;
-        return length;
-    }
-        
-    /**
-     * 
-     * @param {*} sdp 
-     * @param {*} buffer 
-     * @param {*} pos 
-     * @returns 
-     */
-    writeSDParam(sdp, buffer, pos){
-        buffer.write(SyslogMessage.SP, pos++);
-        buffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
-        pos += sdp.getParamName().toString().length;
-        buffer.write('=', pos++);
-        buffer.write('"', pos++);
-        buffer.write(this.getEscapedParamValue(sdp.getParamValue()), pos)
-        pos+= sdp.getParamValue().toString().length;
-        buffer.write('"', pos++); 
-        return {out: buffer, pos: pos};
-    }
-
-     /**
-      * 
-      * @param {string} paramValue 
-      * @returns {string} sb
-      */
-    getEscapedParamValue(paramValue){ 
-        let sb = new StringBuilder();
-        for(let i = 0; i < paramValue.length; i++){
-            let c = paramValue.charAt(i);
-            switch(c){
-                case '"' : 
-                case '\\':
-                case ']':
-                    sb.append('\\');
-                    break;
-                default:
-                    break;
-            }
-        sb.append(c);
-    }
-    return sb.toString();
-   }
-
 }
 module.exports = SyslogMessage;
     
@@ -481,6 +370,113 @@ function writeNillableValue(value){
     }
 }
 
+/**
+* 
+* @param {Set} sdElementSet 
+* @returns {Buffer}
+*/
+
+function writeStructureDataOrNillableValue(sdElementSet){
+   let pos = 0;
+   let buffer;
+   if(sdElementSet == null || sdElementSet.size == 0){
+       buffer = Buffer.alloc(2)
+       buffer.write(SyslogMessage.SP, pos++);
+       buffer.write(SyslogMessage.NILVALUE, pos++);
+       return buffer;
+   } else{
+       for(const sde of sdElementSet){
+        buffer =  writeSDElement.call(this,sde)
+        }
+        return buffer;
+   }
+}
+
+function  getSdParamLength(sdp){
+    let length = sdp.getParamName().toString().length + sdp.getParamValue().toString().length + 5;
+    return length;
+}
+
+/**
+ * This methods returns the length which set buffer size 
+ * @param {SDElement} sde 
+ * @returns {Number} 
+*/
+function getSdLength(sde){
+    let length = sde.getSdID().toString().length + 2;
+    let sdpRes = 0;
+    for(const sdp of sde.getSdParams()){
+        sdpRes = getSdParamLength.call(this,sdp);
+        length += sdpRes;
+    }
+    return length;
+}
+/**
+    * 
+    * @param {SDParam} sdp 
+    * @param {Buffer} buffer 
+    * @param {Number} pos 
+    * @returns 
+*/
+function writeSDParam(sdp, buffer, pos){
+    buffer.write(SyslogMessage.SP, pos++);
+    buffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
+    pos += sdp.getParamName().toString().length;
+    buffer.write('=', pos++);
+    buffer.write('"', pos++);
+    buffer.write(getEscapedParamValue.call(this,sdp.getParamValue()), pos)
+    pos+= sdp.getParamValue().toString().length;
+    buffer.write('"', pos++); 
+    return {out: buffer, pos: pos};
+}
+
+/**
+* 
+* @param {SDElement} sde 
+* @returns 
+*/
+function  writeSDElement(sde){      
+   let sdLength = getSdLength.call(this,sde);
+   let buffer = Buffer.alloc(sdLength);
+   let pos = 0;
+   buffer.write(SyslogMessage.SP, pos++);
+   buffer.write('[', pos++);
+   buffer.write(sde.getSdID(), pos)
+   pos += sde.getSdID().toString().length;
+   for(const sdp of sde.getSdParams()){
+       let sdpTemp = writeSDParam.call(this,sdp, buffer, pos);
+       pos =  sdpTemp.pos;
+   }
+   buffer.write(']',pos++);
+   return buffer;
+}
+
+
+
+
+ /**
+    * 
+    * @param {string} paramValue 
+    * @returns {string} sb
+*/
+  function  getEscapedParamValue(paramValue){ 
+        let sb = new StringBuilder();
+        for(let i = 0; i < paramValue.length; i++){
+            let c = paramValue.charAt(i);
+            switch(c){
+                case '"' : 
+                case '\\':
+                case ']':
+                    sb.append('\\');
+                    break;
+                default:
+                    break;
+            }
+        sb.append(c);
+    }
+    return sb.toString();
+   }
+
 
 function appFourthPromise(){
     return new Promise(async(resolve, reject) => {
@@ -506,7 +502,7 @@ function msgIdSixthPromise(){
 function sdSeventhPromise(){
     return new Promise(async(resolve, reject) => {
         //write SD
-        let ssde = this.writeStructureDataOrNillableValue(this._sdElements);
+        let ssde = writeStructureDataOrNillableValue.call(this,this._sdElements);
         resolve(ssde);
     })
 }
