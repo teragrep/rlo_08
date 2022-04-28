@@ -341,13 +341,55 @@ function hostThirdPromise(){
         if(this._hostname == null){
             this._hostname = await SyslogMessage.localhostNameReference.getData(); //
         }
-        let bufferLength = this._hostname.toString().length + 1;
-        let pos = 0;
-        let thirdBuffer = Buffer.alloc(bufferLength);
-        thirdBuffer.fill(0);
-        thirdBuffer.write(SyslogMessage.SP, pos++);
-        thirdBuffer.write(this._hostname.toString(),pos);
-        resolve(thirdBuffer);
+        if(validateHostname.call(this, this._hostname)){
+            let bufferLength = this._hostname.toString().length + 1;
+            let pos = 0;
+            let thirdBuffer = Buffer.alloc(bufferLength);
+            thirdBuffer.fill(0);
+            thirdBuffer.write(SyslogMessage.SP, pos++);
+            thirdBuffer.write(this._hostname.toString(),pos);
+            resolve(thirdBuffer);
+        }
+        
+    })
+}
+
+/**
+ * 
+ * @returns 
+ */
+ function appFourthPromise(){
+    return new Promise(async(resolve, reject) => {
+        validateappName.call(this, this._appName);
+        let appName = writeNillableValue.call(this, this._appName);      
+        resolve(appName);
+    })
+}
+/**
+ * 
+ * @returns 
+ */
+function procIdFifthPromise(){
+    return new Promise(async(resolve, reject) => {
+        validateProcId.call(this, this._procId);
+        let procId = writeNillableValue.call(this, this._procId);
+        resolve(procId);
+    })
+}
+
+function msgIdSixthPromise(){
+    return new Promise(async(resolve, reject) => {
+        validateMsgId.call(this, this._msgId);
+        let msgID = writeNillableValue.call(this, this._msgId);
+        resolve(msgID);
+    })
+}
+
+function sdSeventhPromise(){
+    return new Promise(async(resolve, reject) => {
+        //write SD
+        let ssde = writeStructureDataOrNillableValue.call(this,this._sdElements);
+        resolve(ssde);
     })
 }
 
@@ -478,40 +520,89 @@ function  writeSDElement(sde){
     return sb.toString();
    }
 
+
+
 /**
+ * @todo 
+ * 1 - Hostnames can be 255 Bytes, Some systems may limit to 64, in order to check>> HOST_NAME_MAX specifies 64
+ * 2 - Hostnames used in DNS can be 253 Byes as FQDN
+ * 3 - 
  * 
- * @returns 
+ * @param {String} hostname 
  */
-function appFourthPromise(){
-    return new Promise(async(resolve, reject) => {
-        let appName = writeNillableValue.call(this, this._appName);
-        resolve(appName);
-    })
-}
-/**
- * 
- * @returns 
- */
-function pidFifthPromise(){
-    return new Promise(async(resolve, reject) => {
-        let pId = writeNillableValue.call(this, this._procId);
-        resolve(pId);
-    })
+function validateHostname(hostname) {
+    if(hostname.toString().length > 255){
+        throw new Error('hostname MAX length should not exceed 255 characters: ', hostname.length)
+    }
+    else {
+        validatePrintAscii.call(this, hostname);
+        return true;
+    }   
 }
 
-function msgIdSixthPromise(){
-    return new Promise(async(resolve, reject) => {
-        let msgID = writeNillableValue.call(this, this._msgId);
-        resolve(msgID);
-    })
+/**
+ * @description
+ * This method ensures that recived appName has  less than 48 characters and,  that ASCII values ranges between 33 to 126.
+ * @param {String} appName 
+ */
+function validateappName(appName) {
+    if(appName != undefined && appName.length > 48){
+        throw new Error('appName MAX length should not exceed 48 characters: ', appName.length)
+    }
+    else {
+        if(appName === undefined || appName == null ){
+            return;
+        }
+        else{
+            validatePrintAscii.call(this, appName);
+        }
+    }    
+}
+/**
+ * 
+ * @param {String} procId 
+ * @returns 
+ */
+function validateProcId(procId) {
+    if(procId != undefined && procId.length > 128){
+        throw new Error('procId MAX length should not exceed 128 charaters: ',procId.length )
+    }
+    else {
+        if(procId === undefined || procId == null ){
+            return;
+        }
+        else{
+            validatePrintAscii.call(this, procId);
+        }
+    }       
 }
 
-function sdSeventhPromise(){
-    return new Promise(async(resolve, reject) => {
-        //write SD
-        let ssde = writeStructureDataOrNillableValue.call(this,this._sdElements);
-        resolve(ssde);
-    })
+function validateMsgId(msgId) {
+    if(msgId != undefined && msgId.length > 32){
+        throw new Error('msgId MAX length should not exceed 128 charaters: ',msgId.length )
+    }
+    else {
+        if(msgId === undefined || msgId == null ){
+            return;
+        }
+        else{
+            validatePrintAscii.call(this, msgId);
+        }
+    }   
+
+    
+}
+/**
+ * This check the characters in the passing string, that ASCII value range between 33 and 126.
+ * @param {String} str 
+ */
+function validatePrintAscii(str) {
+    for(let i = 0; i < str.length; i++){
+        let char = str.charCodeAt(i);
+        if((char < 33) ||  (char > 126)){
+            throw new Error('Check for including the applicable ASCII : ', char)
+        }   
+    }    
 }
 
 /**
@@ -534,7 +625,7 @@ function toPromiseAll(){
        dateBuffer = await dateSecondPromise.call(this);
        hostnameBuffer = await hostThirdPromise.call(this);
        appNameBuffer = await appFourthPromise.call(this);
-       procIdBuffer = await pidFifthPromise.call(this);
+       procIdBuffer = await procIdFifthPromise.call(this);
        msgIdBuffer = await msgIdSixthPromise.call(this);
        sdElementsBuffer = await sdSeventhPromise.call(this);
 
