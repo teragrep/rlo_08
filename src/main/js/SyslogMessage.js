@@ -21,10 +21,10 @@ const { RFC_3164, RFC_5424, RFC_5425 } = require("./MessageFormat");
 const MessageFormat = require("./MessageFormat");
 const FetchHost = require('../../util/FetchHost');
 const RFC3339DateFormat = require("../../util/RFC3339DateFormat");
-const SDParam = require("./SDParam");
-const SDElement = require("./SDElement");
 const StringBuilder = require('../../lib/StringBuilder');
 const CharArrayWriter = require("../../lib/CharArrayWriter");
+const SDSerializer = require("../../lib/SDSerializer");
+const SDElement = require("./SDElement");
 
 let _facility;
 let _severity;
@@ -37,13 +37,15 @@ let _sdElements; //Set datastructure
 let _msg; //charArrayWriter
 
 /**
- * @todo enhance the implementation with similar CharArrayWriter, handling null of the hostname, 
- * ಠ_ಠ concurrency might not take much fluence this time, but keep the place for the consideration.
- * ⚠️ check for the potential security flaws.☢️☢️
- * Serialization **** Multiple connection thread, separation of concern 
- *  
- * @Done Builder design pattern, handling writeSDElement, paramvalue.
+ * Syslog message as defined in <a href="https://tools.ietf.org/html/rfc5424">RFC 5424 - The Syslog Protocol</a>.
+ * Also compatible with <a href="http://tools.ietf.org/html/rfc3164">RFC-3164: The BSD syslog Protocol</a>,
+ * @link https://tools.ietf.org/html/rfc5424    
  * 
+ * ಠ_ಠ 
+ * 1 - Clean up, patch ups & doc
+ * 2 - Performance test, RLP:02 integration test - Readme / how to 
+ * 3 - TLS: Use the standard out. Make the How-to article,  RFC5425
+ *  
  */
 class SyslogMessage {
 
@@ -51,21 +53,14 @@ class SyslogMessage {
     static NILVALUE = '-';
     static rfc3339DateFormat = RFC3339DateFormat;
     static rfc3164DateFormat; // TODO: later
-    static localhostNameReference = new CachingReference(FetchHost);  //  get the host name and refresh every 10
+    static localhostNameReference = new CachingReference(FetchHost);  //  get the host name and refresh every 10ms
   
     
-    /*
-    * According to <a href="http://tools.ietf.org/html/rfc3164#section-4.1.2">RFC31614- 4.1.2 HEADER Part of a syslog Packet</a>,
-    * we should use local time and not GMT.
-    * <quote>
-    *     The TIMESTAMP field is the local time and is in the format of "Mmm dd hh:mm:ss" (without the quote marks)
-    * </quote>
-    */
-
+   
 
     /**
      * Builder pattern handler
-     * @returns 
+     * 
      */
     constructor(build){
         this._facility = build._facility;
@@ -96,8 +91,8 @@ class SyslogMessage {
     }
 
     /**
-     * @todo
-     * @returns the Date object created using the timestamp (milliseconds)
+     * 
+     * @returns {Date} timestamp the Date object created using the timestamp (milliseconds)
      */
     getTimestamp(){
         return this_timestamp == null ? null : new Date(this._timestamp);
@@ -153,13 +148,13 @@ class SyslogMessage {
     getSDElements(){
         let ssde = this._sdElements;
         if(ssde == null){
-            ssde = new HashSet(); // TODO
+            ssde = new HashSet(); 
         }
         return ssde;
     }
 
     setSDElements(ssde){
-        this._sdElements = ssde; // TODO
+        this._sdElements = ssde; 
     }
 
     /**
@@ -182,7 +177,7 @@ class SyslogMessage {
             }
 
             /**
-             * @todo
+             * 
              * @param {Number} timestamp 
             */
             withTimestamp(timestamp){
@@ -275,15 +270,8 @@ class SyslogMessage {
     }
 
     /**
-     * @todo 
-     *  1 - Buffer is useful, but dangerous Track it carefully.... fill(0), in case if really big buffer, might be impact on the performance
-     *  2 - Make functions private &  Code clean up & refinement 
-     *  3 - Flexible, reallocation // toRfc5424SyslogMessgae // TLS: Use the standard out. Make the article
-     *      Ok, resizing the buffer we can obtain, like copy the previous buffer content size with new arrival of the size 
+     * @description 
      * 
-     * Comment: create similar classes that for example Facility has for each of the message components so that they could do the serialization and validation
-     *           for their part i.e. hostname has length requirements and appName has too and both have as well allowed character range
-     *   
      * Generates an <a href="http://tools.ietf.org/html/rfc5424">RFC-5424</a> message.
      * 
      * 
@@ -304,7 +292,11 @@ class SyslogMessage {
 }
 module.exports = SyslogMessage;
     
-
+/**
+ * @description 
+ * This promise returns the buffer with PRI value and version number
+ * @returns {Promise} 
+ */
 function priVerFirstPromise(){
     return new Promise(async(resolve, reject) => {
         let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
@@ -321,7 +313,11 @@ function priVerFirstPromise(){
     })       
 }
 
-
+/**
+ * @description 
+ * This promise returns buffer with RFC3339 Timestamp, if timestamp is missing it will apply the current system timestamp.
+ * @returns {Promise}
+ */
 function dateSecondPromise(){
     return new Promise(async(resolve, reject) => {
         
@@ -335,11 +331,15 @@ function dateSecondPromise(){
         resolve(secondBuffer)
     })
 }
-
+/**
+ * @description 
+ * This promise returns the buffer with hostname.  
+ * @returns {Promise}
+ */
 function hostThirdPromise(){
     return new Promise(async(resolve, reject) =>{
         if(this._hostname == null){
-            this._hostname = await SyslogMessage.localhostNameReference.getData();
+            this._hostname = await SyslogMessage.localhostNameReference.getData(); //
         }
         let bufferLength = this._hostname.toString().length + 1;
         let pos = 0;
@@ -392,72 +392,73 @@ function writeStructureDataOrNillableValue(sdElementSet){
    }
 }
 
-function  getSdParamLength(sdp){
-    let length = sdp.getParamName().toString().length + sdp.getParamValue().toString().length + 5;
-    return length;
-}
-
+// tag::writeSDElement[]
 /**
- * This methods returns the length which set buffer size 
+ * @description
+ * Writes SD elements in the allocated buffers & concat them.
+ * This method accepts the SDElement. 
+ * Buffer Array which keeps the ID, SDElement, Tail buffers.
+ * 
+ * It starts to extract the SdID of the SDElement and holds in the idBuffer. 
+ * Looping the available  SDParams in the SDElement and serialzing using the SDSerializer.
+ * 
+ * 
  * @param {SDElement} sde 
- * @returns {Number} 
-*/
-function getSdLength(sde){
-    let length = sde.getSdID().toString().length + 2;
-    let sdpRes = 0;
+ * @returns {Buffer} complete concatenated buffer
+ */
+function  writeSDElement(sde){   
+    //ID Buffer 
+    let bufferArray = [];  // keeps the buffers for the concatenation
+    let bufsize = sde.getSdID().toString().length + 2;
+    let idBuffer = Buffer.alloc(bufsize);
+    let pos = 0;
+    idBuffer.write(SyslogMessage.SP, pos++);
+    idBuffer.write('[', pos++);
+    idBuffer.write(sde.getSdID(), pos)
+
+    bufferArray.push(idBuffer); //Add SdID buffer
+
+    pos += sde.getSdID().toString().length;// Locate the writeable position for the next byte 
     for(const sdp of sde.getSdParams()){
-        sdpRes = getSdParamLength.call(this,sdp);
-        length += sdpRes;
+        let sdSerializer = new SDSerializer(sdp, idBuffer, pos);
+        let sdpTemp = writeSDParam.call(this,sdSerializer); // returns the SDParam buffer     
+        bufferArray.push(sdpTemp); // Add SDParam  buffer
     }
-    return length;
-}
-/**
-    * 
-    * @param {SDParam} sdp 
-    * @param {Buffer} buffer 
-    * @param {Number} pos 
-    * @returns 
-*/
-function writeSDParam(sdp, buffer, pos){
-    buffer.write(SyslogMessage.SP, pos++);
-    buffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
-    pos += sdp.getParamName().toString().length;
-    buffer.write('=', pos++);
-    buffer.write('"', pos++);
-    buffer.write(getEscapedParamValue.call(this,sdp.getParamValue()), pos)
-    pos+= sdp.getParamValue().toString().length;
-    buffer.write('"', pos++); 
-    return {out: buffer, pos: pos};
-}
-
-/**
-* 
-* @param {SDElement} sde 
-* @returns 
-*/
-function  writeSDElement(sde){      
-   let sdLength = getSdLength.call(this,sde);
-   let buffer = Buffer.alloc(sdLength);
-   let pos = 0;
-   buffer.write(SyslogMessage.SP, pos++);
-   buffer.write('[', pos++);
-   buffer.write(sde.getSdID(), pos)
-   pos += sde.getSdID().toString().length;
-   for(const sdp of sde.getSdParams()){
-       let sdpTemp = writeSDParam.call(this,sdp, buffer, pos);
-       pos =  sdpTemp.pos;
-   }
-   buffer.write(']',pos++);
-   return buffer;
-}
-
-
-
+    //Tail Buffer
+    let buf = Buffer.alloc(1)
+    buf.write(']',0);
+    bufferArray.push(buf) // Add Tail buffer
+    let concatBuffer = Buffer.concat(bufferArray); // concatenate buffer
+    return concatBuffer;
+ }
 
  /**
-    * 
-    * @param {string} paramValue 
-    * @returns {string} sb
+  * 
+  * @param {SDSerializer} sdSerializer 
+  * @returns 
+  */
+ function writeSDParam(sdSerializer){
+    let pos = 0;
+    let sdp = sdSerializer.getSdp();
+    let nSize = pos +  sdp.getParamValue().toString().length + sdp.getParamName().toString().length + 4;
+    let nBuffer = Buffer.alloc(nSize); // Transforming to the new Buffer  
+    nBuffer.write(SyslogMessage.SP, pos++);
+    nBuffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
+    pos += sdp.getParamName().toString().length;
+    nBuffer.write('=', pos++);
+    nBuffer.write('"', pos++);
+    nBuffer.write(getEscapedParamValue.call(this,sdp.getParamValue()), pos)
+    pos+= sdp.getParamValue().toString().length;
+    nBuffer.write('"', pos++); 
+    return nBuffer;
+}
+ 
+
+ /**
+  * 
+  * 
+  * @param {string} paramValue 
+  * @returns {string} sb
 */
   function  getEscapedParamValue(paramValue){ 
         let sb = new StringBuilder();
@@ -477,14 +478,20 @@ function  writeSDElement(sde){
     return sb.toString();
    }
 
-
+/**
+ * 
+ * @returns 
+ */
 function appFourthPromise(){
     return new Promise(async(resolve, reject) => {
         let appName = writeNillableValue.call(this, this._appName);
         resolve(appName);
     })
 }
-
+/**
+ * 
+ * @returns 
+ */
 function pidFifthPromise(){
     return new Promise(async(resolve, reject) => {
         let pId = writeNillableValue.call(this, this._procId);
@@ -507,35 +514,44 @@ function sdSeventhPromise(){
     })
 }
 
+/**
+ * @todo naming convention, comments, check for validation according to RFC 5424, 
+ * @returns 
+ * 
+ */
 function toPromiseAll(){
     return new Promise(async(resolve, reject) => {
-       let firstBuffer;
-       let secondBuffer;
-       let thirdBuffer;
-       let fourthBuffer;
-       let fifthBuffer;
-       let sixthBuffer;
-       let seventhBuffer;
+       let priVerBuffer;
+       let dateBuffer;
+       let hostnameBuffer;
+       let appNameBuffer;
+       let procIdBuffer;
+       let msgIdBuffer;
+       let sdElementsBuffer;
 
 
-       firstBuffer = await priVerFirstPromise.call(this); //await this.priVerFirstPromise();
-       secondBuffer = await dateSecondPromise.call(this);
-       thirdBuffer = await hostThirdPromise.call(this);
-       fourthBuffer = await appFourthPromise.call(this);
-       fifthBuffer = await pidFifthPromise.call(this);
-       sixthBuffer = await msgIdSixthPromise.call(this);
-       seventhBuffer = await sdSeventhPromise.call(this);
+       priVerBuffer = await priVerFirstPromise.call(this); 
+       dateBuffer = await dateSecondPromise.call(this);
+       hostnameBuffer = await hostThirdPromise.call(this);
+       appNameBuffer = await appFourthPromise.call(this);
+       procIdBuffer = await pidFifthPromise.call(this);
+       msgIdBuffer = await msgIdSixthPromise.call(this);
+       sdElementsBuffer = await sdSeventhPromise.call(this);
 
-       let len = firstBuffer.toString().length + secondBuffer.toString().length + thirdBuffer.toString().length
-                   + fourthBuffer.toString().length + fifthBuffer.toString().length + sixthBuffer.toString().length + seventhBuffer.toString().length;
-       let tempBuffer = Buffer.concat([firstBuffer, secondBuffer, thirdBuffer, fourthBuffer, fifthBuffer, sixthBuffer, seventhBuffer],len)
+       let bufferArray = [priVerBuffer, dateBuffer, hostnameBuffer, appNameBuffer, procIdBuffer, msgIdBuffer, sdElementsBuffer];
+       let completeBuffer = Buffer.concat(bufferArray);
 
+       /*
+       let len = priVerBuffer.toString().length + dateBuffer.toString().length + hostnameBuffer.toString().length
+                   + appNameBuffer.toString().length + procIdBuffer.toString().length + msgIdBuffer.toString().length + sdElementsBuffer.toString().length;
+       let tempBuffer = Buffer.concat([priVerBuffer, dateBuffer, hostnameBuffer, appNameBuffer, procIdBuffer, msgIdBuffer, sdElementsBuffer],len)
+        */
        if(this._msg != null){
            let msgWriter = new CharArrayWriter();
            msgWriter.write(this._msg, 0, this._msg.length);
-           tempBuffer =  msgWriter.writeTo(tempBuffer);      
+           completeBuffer =  msgWriter.writeTo(completeBuffer);      
        }
 
-       resolve(tempBuffer)
+       resolve(completeBuffer)
     })
 }

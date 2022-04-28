@@ -18,10 +18,10 @@ let message = new SyslogMessage.Builder()
         .withFacility(Facility.LOCAL0)
         .withSeverity(Severity.INFORMATIONAL)
         //.withProcId('8740')
-        .withMsgId('ID47')
+        //.withMsgId('ID47')
         .withMsg('Todays lucky number is 17649276') // Fixed
-        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"), new SDParam("eventID", "1011"))) // Fix the space before the previous 
-        .withDateTimestamp(dateFormat)
+        //.withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
+        //.withDateTimestamp(dateFormat)
         .build()
 
 
@@ -31,12 +31,4 @@ let rfc5424message;
     console.log(rfc5424message);
 }
 
-load();
-
-
-//let rfc5424promiseMessage = message.toPromiseAll();
-//console.log('This is a rfc5424 message: ',rfc5424message.toString()); // this should 
-//console.log(message.getFacility())
-//console.log(RFC3339DateFormat(dateTimestamp));
-
-        
+load();   

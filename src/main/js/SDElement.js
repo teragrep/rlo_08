@@ -85,7 +85,7 @@ const SDParam = require("./SDParam");
 
 
      /**
-     * Check: Generate the null-safe hashcode, Does it fulfill??
+     * Check: Generate the null-safe hashcode.
      * @returns hash
      */
     hashCode(){
@@ -127,6 +127,12 @@ const SDParam = require("./SDParam");
  
  module.exports = SDElement;
 
+ Object.defineProperty(SDElement,'_RESERVED_SDID', {
+    get(){
+        return _RESERVED_SDID;
+    }
+});
+
 /**
  * @todo 
  * @comment send the sdName,RESERVED_SDID as an object
@@ -139,11 +145,7 @@ const SDParam = require("./SDParam");
      * @todo still could not access the private scope propery, 
      * 
      */
-    Object.defineProperty(SDElement,'_RESERVED_SDID', {
-        get(){
-            return _RESERVED_SDID;
-        }
-    });
+    
 
      //let sdName = new String(sdNameParam); // Ensure the string content
      //console.log('From validateSDID '+sdName + ' '+ RESERVED_SDID)
