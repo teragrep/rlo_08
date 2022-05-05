@@ -25,12 +25,6 @@ class CharArrayWriter{
 
     }
 
-    isFull(){
-
-
-        
-    }
-
     /**
      * This method handles single char & char sequence 
      * @param {char/chars} char 
@@ -45,19 +39,6 @@ class CharArrayWriter{
                 this.charArray.push(char[i]);
             }
         }
-    }
-
-
-    flush(){
-
-    }
-
-    reset(){
-
-    }
-
-    toCharArray(){
-
     }
 
     write(char, off, len){
@@ -104,13 +85,5 @@ class CharArrayWriter{
         }
         
     }
-
-    printInfo(){
-        console.log('Bytes size ', this.charArray.toString().length);
-        console.log('Buffer size ', this.typedArray.toString().length);
-
-    }
-
-
 }
 module.exports = CharArrayWriter;

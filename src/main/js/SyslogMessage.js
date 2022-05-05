@@ -277,10 +277,17 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
+         const startTime = Date.now(); // Benchmarking
+         const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
+         console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
 
         try {
             let buffer =  await toPromiseAll.call(this);
-           return buffer.toString();
+            console.log('---------------------Benchmarking on toRfc5424SyslogMessage------------------------%ss', (Date.now() - startTime)/1000); 
+            const promiseUsed = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
+            console.log(`The script uses after the promise call approx ${Math.round(promiseUsed * 100) / 100} MB`);      
+     
+           return buffer; //🔬 Returning the buffer would place the right format for RelpRequest constructor, instead of the string. Possibly adjust the rlp_02 RelpRequest constructor.
 
         }
         catch(err){
@@ -291,6 +298,24 @@ class SyslogMessage {
     
 }
 module.exports = SyslogMessage;
+
+/**
+ * 
+ * @returns 
+ */
+
+function performMatrixStart() {
+    const startTime = Date.now(); // Benchmarking
+    const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
+    console.log(`The script uses before the  call approx ${Math.round(used * 100) / 100} MB`); 
+    return startTime;   
+}
+
+function performMatrixStop(startTime) {
+    console.log('---------------------Benchmarking on ------------------------%ss', (Date.now() - startTime)/1000); 
+            const promiseUsed = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
+            console.log(`The script uses after the call approx ${Math.round(promiseUsed * 100) / 100} MB`);         
+}
     
 /**
  * @description 
@@ -299,17 +324,23 @@ module.exports = SyslogMessage;
  */
 function priVerFirstPromise(){
     return new Promise(async(resolve, reject) => {
-        let pri = this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode();
-        let firstBufferLength = pri.toString().length + 4;
+        console.log('Pri+Version perfomance Matrix start')
+        let startTime= performMatrixStart.call(this);
+        
+        let pri = (this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode()).toString();
+        let firstBufferLength = pri.length + 4;
         var firstBuffer = Buffer.alloc(firstBufferLength);
-        firstBuffer.fill(0);
+        firstBuffer.fill(0); 
         let pos = 0;
-        firstBuffer.write('<', pos++);
+        firstBuffer.write('<', pos++);   
         firstBuffer.write(pri.toString(), pos++);
         pos += pri.toString().length;
         firstBuffer.write('>', pos++);
         firstBuffer.write('1', pos++);
-        resolve(firstBuffer);
+        let firstBufferStr = firstBuffer.toString().split("").filter(char => char.codePointAt(0)).join("") // ⚠️ This is to tackle to the null char , if place 0 it place the null char but ⚠️ Check for the possible abnormal behaviour and/or security flaw. 
+        let finalFirstBuffer = Buffer.from(firstBufferStr)
+        performMatrixStop.call(this, startTime);
+        resolve(finalFirstBuffer);
     })       
 }
 
@@ -320,6 +351,8 @@ function priVerFirstPromise(){
  */
 function dateSecondPromise(){
     return new Promise(async(resolve, reject) => {
+        console.log('Date perfomance Matrix start')
+        let startTime= performMatrixStart.call(this);
         
         let rfc3339timeStamp = (this._timestamp == null ? RFC3339DateFormat(new Date()) : RFC3339DateFormat(new Date(this._timestamp)));
         let bufferLength = rfc3339timeStamp.toString().length + 1;
@@ -328,6 +361,7 @@ function dateSecondPromise(){
         secondBuffer.fill(0);
         secondBuffer.write(SyslogMessage.SP, pos++);
         secondBuffer.write(rfc3339timeStamp.toString(), pos++);
+        performMatrixStop.call(this, startTime);
         resolve(secondBuffer)
     })
 }
@@ -338,6 +372,8 @@ function dateSecondPromise(){
  */
 function hostThirdPromise(){
     return new Promise(async(resolve, reject) =>{
+        console.log('Hostname perfomance Matrix start')
+        let startTime= performMatrixStart.call(this);
         if(this._hostname == null){
             this._hostname = await SyslogMessage.localhostNameReference.getData(); //
         }
@@ -348,6 +384,7 @@ function hostThirdPromise(){
             thirdBuffer.fill(0);
             thirdBuffer.write(SyslogMessage.SP, pos++);
             thirdBuffer.write(this._hostname.toString(),pos);
+            performMatrixStop.call(this, startTime);
             resolve(thirdBuffer);
         }
         
@@ -565,7 +602,7 @@ function validateappName(appName) {
  */
 function validateProcId(procId) {
     if(procId != undefined && procId.length > 128){
-        throw new Error('procId MAX length should not exceed 128 charaters: ',procId.length )
+        throw new Error('procId MAX length should not exceed 128 characters: ',procId.length )
     }
     else {
         if(procId === undefined || procId == null ){
@@ -579,7 +616,7 @@ function validateProcId(procId) {
 
 function validateMsgId(msgId) {
     if(msgId != undefined && msgId.length > 32){
-        throw new Error('msgId MAX length should not exceed 128 charaters: ',msgId.length )
+        throw new Error('msgId MAX length should not exceed 128 characters: ',msgId.length )
     }
     else {
         if(msgId === undefined || msgId == null ){
@@ -619,6 +656,7 @@ function toPromiseAll(){
        let procIdBuffer;
        let msgIdBuffer;
        let sdElementsBuffer;
+       let nLineBuffer;
 
 
        priVerBuffer = await priVerFirstPromise.call(this); 
@@ -628,7 +666,10 @@ function toPromiseAll(){
        procIdBuffer = await procIdFifthPromise.call(this);
        msgIdBuffer = await msgIdSixthPromise.call(this);
        sdElementsBuffer = await sdSeventhPromise.call(this);
+       nLineBuffer = await insertLine.call(this); // Test case experiment
 
+
+       
        let bufferArray = [priVerBuffer, dateBuffer, hostnameBuffer, appNameBuffer, procIdBuffer, msgIdBuffer, sdElementsBuffer];
        let completeBuffer = Buffer.concat(bufferArray);
 
@@ -642,7 +683,19 @@ function toPromiseAll(){
            msgWriter.write(this._msg, 0, this._msg.length);
            completeBuffer =  msgWriter.writeTo(completeBuffer);      
        }
+       let resultBuffer = [completeBuffer, nLineBuffer]
+       resultBuffer = Buffer.concat(resultBuffer);
 
-       resolve(completeBuffer)
+
+       resolve(resultBuffer)
     })
+}
+
+function  insertLine() {
+    return new Promise(async(resolve, reject) => {
+        let nLineBuffer = Buffer.from('\n','ascii');
+        resolve(nLineBuffer);
+
+    })
+    
 }

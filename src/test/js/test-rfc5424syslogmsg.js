@@ -13,7 +13,7 @@ const timestamp = (new Date(dateTimestamp)).getTime();
 
 let message = new SyslogMessage.Builder()
         .withAppName('bulk-data-sorted') //valid
-        //.withTimestamp(timestamp) 
+        .withTimestamp(timestamp) // In case if the timestamp disabled, it will go with system timestamp.
         .withHostname('iris.teragrep.com') //valid
         .withFacility(Facility.LOCAL0)
         .withSeverity(Severity.INFORMATIONAL)
@@ -22,11 +22,13 @@ let message = new SyslogMessage.Builder()
         .withMsg('Todays lucky number is 17649276') // Fixed
         .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
         .build()
-
+/**
+ * According to  the RFC5424 defines  max length and ASCII (33 - 126) for appName, hostname, procId, msgId 
+ */
 let invalideMessage = new SyslogMessage.Builder()
                 .withAppName('bulk-data-sorted ') //invalid because it has the SP char which is not applicable for the appname and tested for the NULL value
                 .withTimestamp(timestamp) 
-                //.withHostname('My.home.servers.are.all.Icelandic.volcanoes.Finnish.Forests.Norway.Lakes.Artic.Circles') //invalid
+                .withHostname('My.home.servers.are.all.Icelandic.volcanoes.Finnish.Forests.Norway.Lakes.Artic.Circles') //invalid
                 .withFacility(Facility.LOCAL0)
                 .withSeverity(Severity.INFORMATIONAL)
                 .withProcId('8740') //validatied for the PRINTUSASCII format
@@ -42,12 +44,12 @@ let rfc5424message;
 
  async function load() {
     rfc5424message = await message.toRfc5424SyslogMessage();
-    console.log(rfc5424message);
+    console.log(rfc5424message.toString());
 }
 
 load(); 
 
-//
+// disable for the build
 
 let invalidRFCMessage;
 /*

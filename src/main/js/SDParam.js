@@ -83,8 +83,7 @@ let _paramValue;
      * @returns 
      */
     equals(obj) {
-        console.log(obj)
-
+        
         if(util.isDeepStrictEqual(this, obj)){
             return  true;
         }

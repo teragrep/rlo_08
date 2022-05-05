@@ -12,5 +12,5 @@ charArrayWriter.append('word');
 console.log(charArrayWriter);
 console.log(charArrayWriter.toString())
 console.log('------------------------------')
-charArrayWriter.printInfo();
+
 

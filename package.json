@@ -15,6 +15,7 @@
   "author": "Teragrep",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@teragrep/rlp_02": "^1.0.19-rc8",
     "async": "^3.2.1",
     "async-mutex": "^0.3.2",
     "dotenv": "^10.0.0",
