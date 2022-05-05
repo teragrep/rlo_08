@@ -8,7 +8,7 @@ Client Library written in Javascript to send messages to a Syslog server
 
 ### Generate the Syslog messages
 
-``javascript
+```javascript
 let message = new SyslogMessage.Builder()
         .withAppName('bulk-data-sorted')
         //.withTimestamp(timestamp) // In case if the timestamp disabled, it will go with system timestamp.
