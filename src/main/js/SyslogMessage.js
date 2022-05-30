@@ -326,17 +326,21 @@ function priVerFirstPromise(){
     return new Promise(async(resolve, reject) => {
         console.log('Pri+Version perfomance Matrix start')
         let startTime= performMatrixStart.call(this);
-        
+        console.log('Facility CODE: ',Number.isInteger(this._facility.getNumericalCode() * 8))
         let pri = (this._facility.getNumericalCode() * 8 + this._severity.getNumericalCode()).toString();
+       // pri = pri.split("").filter(char => char.codePointAt(0)).join("");
+        console.log("PRI Length after filtering",pri.length)
+        console.log('priVerFirstPromise ', pri, ' LENGTH: ', pri.length);
         let firstBufferLength = pri.length + 4;
         var firstBuffer = Buffer.alloc(firstBufferLength);
         firstBuffer.fill(0); 
         let pos = 0;
-        firstBuffer.write('<', pos++);   
+        firstBuffer.write('<', pos++,'ascii');   
         firstBuffer.write(pri.toString(), pos++);
         pos += pri.toString().length;
-        firstBuffer.write('>', pos++);
-        firstBuffer.write('1', pos++);
+        firstBuffer.write('>', pos++,'ascii');
+        firstBuffer.write('1', pos++,'ascii');
+        console.log('First buffer length ', firstBufferLength, ' bytesread Buffer ', firstBuffer.byteLength);
         let firstBufferStr = firstBuffer.toString().split("").filter(char => char.codePointAt(0)).join("") // ⚠️ This is to tackle to the null char , if place 0 it place the null char but ⚠️ Check for the possible abnormal behaviour and/or security flaw. 
         let finalFirstBuffer = Buffer.from(firstBufferStr)
         performMatrixStop.call(this, startTime);

@@ -24,7 +24,16 @@ let message = new SyslogMessage.Builder()
 ```
 
 
-## RLP_02 Configuration
+## RLP_02 Integration & Configuration
+
+### Install RLP_02
+
+```cmd
+npm install @teragrep/rlp_02
+```
+
+
+### RLP_02 RelpConnection configuration & usage
 
 ```javascript
 let relpConnection = new RelpConnection();
