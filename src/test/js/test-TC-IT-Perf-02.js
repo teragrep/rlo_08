@@ -4,6 +4,19 @@
  * Speed, RT, stability, resource usage like memory utilization, data transfer velocity, network bandwidith usage. 
  * There are some possible performance boolenecks. related to #ISS-10,  incosistencies or like  memory utilization issue.
  * Matrix of the Memory allocation, CPU, network 
+ * Note that The version of code that runs correctly one day might leak memory in the future due to a change in load, 
+ * a new integration, or a change in the environment in which the application is run.
+ * 
+ * NOTE:
+ * 1 - 'this' will also become a global variable as arrow functions, need to be mindful not to create accidental globals
+ * 2 - destructure objects and use only the fields you need from an object or array rather than passing around entire objects 
+ *     or arrays to functions, closures, timers, and event handlers.
+ * 3 - Closures, event handlers, timers can mostly lead to memory leaks, thus properly takes care them.
+ * 
+ * 4 - Memwatch, 
+ * 
+ * GC Metrics:
+ * Time consumption 
  * 
  * 
  * Build test case around to potential data transfer rate & network bandwidith RELP Server
@@ -70,18 +83,22 @@ const { PerformanceObserver, performance } = require('node:perf_hooks')
 
 const observer = new PerformanceObserver((items) => {
         console.log(items.getEntries()[0].duration);
-        performance.clearMarks();
+        const entry = items.getEntries()[0]
+        //performance.clearMarks();
+        
 });
 
-observer.observe({ type: 'measure' });
-performance.measure('Performance measure start NOW.....');
+//observer.observe({ type: 'measure' });
+observer.observe({ entryTypes: ['gc'] });
+
+//performance.measure('Performance measure start NOW.....');
 
 let relpConnection = new RelpConnection();
 let host = '127.0.0.1';
 let port = 1337; 
 let cfePort = 1601;
 
-performance.mark('A')
+//performance.mark('A')
 async.waterfall(
     [
 
@@ -93,7 +110,7 @@ async.waterfall(
 	connect,
        // performance.measure('connect', 'A'), // Disable for the execution, but should . 
         load,
-       // performance.mark('B'),
+        //performance.mark('B'),
        // performance.measure('Load', 'A', 'B'),
         disconnect
 
@@ -107,6 +124,7 @@ async.waterfall(
         }
     }
 );
+observer.disconnect();
 /**
  * @todo Evaluate the response time 
  * @returns 
