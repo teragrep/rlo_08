@@ -15,9 +15,12 @@
  * 
  * 4 - Memwatch, 
  * 
+ *  ⚠️⚠️⚠️ @Comment - Fix on the RLP_02 RelpConnection Line 485 required, thus this update RLP_02 the package  *****
+ * 
  * GC Metrics:
  * Time consumption 
- * 
+ * Tracing ; node --trace-gc test-TC-IT-Perf-02.js 
+ * install clinic
  * 
  * Build test case around to potential data transfer rate & network bandwidith RELP Server
  * Objective: Obtain the average speed of data being sent to the RELP Server on the other end over the last few seconds, is this possible??
@@ -28,6 +31,10 @@
  *    - Applicalbe Disk time, bandwidth, private bytes, 
  * 
  * 
+ * Update the documentation with resource usage metrics & insights. According to my observation, not a memory leak.
+ * couldn't properly configure the perfomance hooks yet. 
+ * now monitoring the network traffic metrics using tcpdump utility. 
+ * hope to demo the findings and hear the comments 
  */
 
 /*
@@ -109,10 +116,11 @@ async.waterfall(
         },
 	connect,
        // performance.measure('connect', 'A'), // Disable for the execution, but should . 
-        load,
+    load,
         //performance.mark('B'),
        // performance.measure('Load', 'A', 'B'),
-        disconnect
+    commit,
+    disconnect
 
     ],
     function (err) {
@@ -170,25 +178,73 @@ let message2 = new SyslogMessage.Builder()
         .withMsg('su root failed for lonvick on /dev/pts/8')
         .build()
 
-let dataPacket1, dataPacket2; 
+//----------------------------- dataset 2 --------------------------------------------------------------------------------------------------------------
+let message3 = new SyslogMessage.Builder()
+        .withAppName('bulk-data-sorted') 
+        .withTimestamp(timestamp) // In case if the timestamp disabled, it will go with system timestamp.
+        .withHostname('iris.teragrep.com') 
+        .withFacility(Facility.CRON)
+        .withSeverity(Severity.ERROR)
+        .withProcId('4890') 
+        .withMsgId('ID98')
+        .withMsg('failed for lonvick on /dev/pts/8') // '\n' should be placed 
+        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
+        .build()
+
+
+let message4 = new SyslogMessage.Builder()
+        .withAppName('bulk-data-sorted') 
+        //.withTimestamp(timestamp) // In case if the timestamp disabled, it will go with system timestamp.
+        .withHostname('iris.teragrep.com') 
+        .withFacility(Facility.KERN)
+        .withSeverity(Severity.INFORMATIONAL)
+        .withProcId('4890') 
+        .withMsgId('ID98')
+        .withMsg('failed for lonvick on /dev/pts/8') // '\n' should be placed 
+        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
+        .build()
+
+
+//-----------------------------end ---------------------------------------------------------------------------------------------------------------------
+
+let dataPacket1, dataPacket2, dataPacket3, dataPacket4; 
 
 async function load() {
     dataPacket1 = await message.toRfc5424SyslogMessage(); // return the buffer fits but not string becuase our RLP_02 >>> RelpRequest constructor 
     dataPacket2 = await message2.toRfc5424SyslogMessage();
+    dataPacket3 = await message3.toRfc5424SyslogMessage();
+    dataPacket4 = await message4.toRfc5424SyslogMessage();
 }
-
-
-
 
 
 function commit(){
     return new Promise(async(resolve, reject) => {
         let relpBatch = new RelpBatch();
         relpBatch.insert(dataPacket1);
-        relpBatch.insert(data);
         relpBatch.insert(dataPacket1);
         relpBatch.insert(dataPacket1);
-        
+        relpBatch.insert(dataPacket1);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+
+        relpBatch.insert(dataPacket1);
+        relpBatch.insert(dataPacket1);
+        relpBatch.insert(dataPacket1);
+        relpBatch.insert(dataPacket1);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+        relpBatch.insert(dataPacket3);
+
+        //OK, increase the data load..... 
+        // Max messages would be 9521, thus more than that could generate the BST(Binary Search Tree) lib's RangeError
+        for(let i = 0; i < 8000; i++){
+            relpBatch.insert(dataPacket1);
+        }
+
+
         let resWindow = await relpConnection.commit(relpBatch);
         console.log('After Batch-1 Completion....', resWindow)
             
@@ -210,8 +266,30 @@ function commit(){
         
         let relpBatch2 = new RelpBatch();
         relpBatch2.insert(dataPacket2);
-        relpBatch2.insert(dataPacket2);        
+        relpBatch2.insert(dataPacket2); 
+        relpBatch2.insert(dataPacket2);
+        relpBatch2.insert(dataPacket2); 
+        relpBatch2.insert(dataPacket4);
+        relpBatch2.insert(dataPacket4);  
+        relpBatch2.insert(dataPacket4);
+        relpBatch2.insert(dataPacket4);  
+        
+        relpBatch2.insert(dataPacket2);
+        relpBatch2.insert(dataPacket2); 
+        relpBatch2.insert(dataPacket2);
+        relpBatch2.insert(dataPacket2); 
+        relpBatch2.insert(dataPacket4);
+        relpBatch2.insert(dataPacket4);  
+        relpBatch2.insert(dataPacket4);
+        relpBatch2.insert(dataPacket4);  
         relpConnection.commit(relpBatch2);
+
+        //------- Batch3 ------------
+        let relpBatch3 = new RelpBatch();
+        relpBatch3.insert(dataPacket3);
+        relpBatch3.insert(dataPacket3);
+        relpBatch3.insert(dataPacket3);
+        //relpConnection.commit(relpBatch3);
 
         return resolve(true);
     })  
