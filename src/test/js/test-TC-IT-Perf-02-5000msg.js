@@ -15,6 +15,18 @@ const SDElement = require('../../main/js/SDElement')
 const SDParam = require('../../main/js/SDParam');
 const { PerformanceObserver, performance } = require('node:perf_hooks')
 
+/**
+ * @todo Possible enhancement 
+ * This is a base idea for disabling the console logging messages
+ * 
+ * 
+ */
+
+let log = console.log;
+log = require('../../util/Helper')
+
+
+
 const observer = new PerformanceObserver((items) => {
         console.log(items.getEntries()[0].duration);
         const entry = items.getEntries()[0]
