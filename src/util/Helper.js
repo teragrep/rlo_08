@@ -3,9 +3,11 @@
 require('dotenv').config();
 
 const env = process.env.NODE_ENV;
+let log = console.log;
 
-const log = (function (env) {
-    if(env == "RELP_DEBUG"){
+log = (function (env) {
+    if(env == "RELP_DEBUG"){ // 
+        console.log('Disable the log messages  on the 👀', env);
         return console.log = () => {};
         //return () => {}
     }
@@ -16,9 +18,4 @@ const log = (function (env) {
 })(process.env.NODE_ENV)
 
 module.exports =  log
-
-/*
-console.log(process.env.NODE_ENV);
-console.log = function() {};
-*/
 

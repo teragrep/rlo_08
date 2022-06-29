@@ -18,12 +18,12 @@ const { PerformanceObserver, performance } = require('node:perf_hooks')
 /**
  * @todo Possible enhancement 
  * This is a base idea for disabling the console logging messages
- * 
+ *  
  * 
  */
 
-let log = console.log;
-log = require('../../util/Helper')
+
+let log = require('../../util/Helper') // Just this line should be placed in which file needs to disable the log messages
 
 
 
