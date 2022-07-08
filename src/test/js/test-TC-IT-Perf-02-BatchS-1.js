@@ -135,12 +135,6 @@ async function load() {
 let dataPacketArray = [];
 let messageArray = [];
 
-async function loadArray(){
-    for(let i = 0; i < 4; i++){
-        dataPacketArray[i] = await mess 
-    }
-
-}
 
 function generateRandomNumber(max){
     return Math.floor(Math.random()* max) + 1;
