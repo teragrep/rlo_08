@@ -35,6 +35,7 @@ let _procId;
 let _msgId;
 let _sdElements; //Set datastructure
 let _msg; //charArrayWriter
+let _debug;
 
 /**
  * Syslog message as defined in <a href="https://tools.ietf.org/html/rfc5424">RFC 5424 - The Syslog Protocol</a>.
@@ -72,6 +73,7 @@ class SyslogMessage {
         this._msg = build._msg;
         this._msgId = build._msgId;
         this._sdElements = build._sdElements;
+        this._debug = build._debug;
     }
 
     getFacility(){
@@ -155,6 +157,14 @@ class SyslogMessage {
 
     setSDElements(ssde){
         this._sdElements = ssde; 
+    }
+
+    getDebug(){
+        return this._debug;
+    }
+
+    setDebug(flag){
+        this._debug = flag;
     }
 
     /**
@@ -244,6 +254,19 @@ class SyslogMessage {
                     this._sdElements = new HashSet();
                 }
                 this._sdElements.add(sde) //TODO
+                return this;
+            }
+
+            // Setting the log messages visibility mode
+            withDebug(flag){
+                if(flag == true){
+                    this._debug = true;
+                }
+                else if(flag == false){
+                    this._debug = false;
+                    console.log('Disable the log messages  by setting debug flag 👀')
+                    console.log = () => {};
+                }
                 return this;
             }
 
@@ -583,7 +606,7 @@ function validateHostname(hostname) {
 
 /**
  * @description
- * This method ensures that recived appName has  less than 48 characters and,  that ASCII values ranges between 33 to 126.
+ * This method ensures that received appName has  less than 48 characters and,  that ASCII values ranges between 33 to 126.
  * @param {String} appName 
  */
 function validateappName(appName) {
