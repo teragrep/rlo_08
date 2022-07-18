@@ -32,7 +32,6 @@ let invalideMessage = new SyslogMessage.Builder()
                 .withFacility(Facility.KERN)
                 .withSeverity(Severity.INFORMATIONAL)
                 .withProcId('8740') //validatied for the PRINTUSASCII format
-                .withMsgId('ID47')
                 .withMsg('Todays lucky number is 17649276') // Fixed
                 //.withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
                 //.withDateTimestamp(dateFormat)
