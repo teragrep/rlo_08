@@ -35,7 +35,7 @@ let _procId;
 let _msgId;
 let _sdElements; //Set datastructure
 let _msg; //charArrayWriter
-let _debug;
+let _debug = false;
 
 /**
  * Syslog message as defined in <a href="https://tools.ietf.org/html/rfc5424">RFC 5424 - The Syslog Protocol</a>.
@@ -258,14 +258,22 @@ class SyslogMessage {
             }
 
             // Setting the log messages visibility mode
-            withDebug(flag){
-                if(flag == true){
-                    this._debug = true;
+            withDebug(enabled){
+                if(enabled == true){
+                    _debug = true; // this refers ????
+                    let log = console.log;
+                    console.log('------------------------ Debug Mode Enabled👀 --------------------', _debug)
+                  /*  log = (function () {
+                        return (...args) => {
+                            console.log(...args)
+                            return this;
+                        }
+                    })*/
+                    
                 }
-                else if(flag == false){
+                else if(enabled == false || _debug == false){
                     this._debug = false;
-                    console.log('Disable the log messages  by setting debug flag 👀')
-                    console.log = () => {};
+                    //console.log = () => {};
                 }
                 return this;
             }
@@ -292,6 +300,7 @@ class SyslogMessage {
         }
     }
 
+
     /**
      * @description 
      * 
@@ -300,6 +309,7 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
+         setDebugMode()
          const startTime = Date.now(); // Benchmarking
          const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
          console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
@@ -308,7 +318,7 @@ class SyslogMessage {
             let buffer =  await toPromiseAll.call(this);
             console.log('---------------------Benchmarking on toRfc5424SyslogMessage------------------------%ss', (Date.now() - startTime)/1000); 
             const promiseUsed = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
-            console.log(`The script uses after the promise call approx ${Math.round(promiseUsed * 100) / 100} MB`);      
+            console.log(`The script uses after the promise call approx ${Math.round(promiseUsed * 100) / 100} MB`);   
      
            return buffer; //🔬 Returning the buffer would place the right format for RelpRequest constructor, instead of the string. Possibly adjust the rlp_02 RelpRequest constructor.
 
@@ -684,6 +694,7 @@ function toPromiseAll(){
        let msgIdBuffer;
        let sdElementsBuffer;
        let nLineBuffer;
+      
 
 
        priVerBuffer = await priVerFirstPromise.call(this); 
@@ -694,6 +705,7 @@ function toPromiseAll(){
        msgIdBuffer = await msgIdSixthPromise.call(this);
        sdElementsBuffer = await sdSeventhPromise.call(this);
        nLineBuffer = await insertLine.call(this); // Test case experiment
+       
 
 
        
@@ -726,3 +738,14 @@ function  insertLine() {
     })
     
 }
+/**
+ * 
+ * @returns Ensure to set to disbaling the console.log messages
+ */
+function setDebugMode(){
+    if(_debug == false){
+        return console.log = () => {};
+    }
+}
+
+
