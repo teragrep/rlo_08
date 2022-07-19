@@ -21,7 +21,7 @@ let message = new SyslogMessage.Builder()
         .withMsgId('ID47')
         .withMsg('Todays lucky number is 17649276') // Fixed
         .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) // Fix the space before the previous 
-        .withDebug(false) // setting the true enabling to hide the log
+        .withDebug(true) // setting the true enabling to visible the log
         .build()
 
 
