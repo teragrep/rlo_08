@@ -106,7 +106,8 @@ class SyslogMessage {
      */
     setTimestamp(timestamp){
         if(timestamp instanceof Date){
-            this._timestamp = timestamp == null ? null : timestamp.getTime();
+            //this._timestamp = timestamp == null ? null : timestamp.getTime(); // Coverity alert for check DCE
+            this._timestamp =  timestamp.getTime();
         }
     }
 
@@ -260,15 +261,9 @@ class SyslogMessage {
             // Setting the log messages visibility mode
             withDebug(enabled){
                 if(enabled == true){
-                    _debug = true; // this refers ????
+                    _debug = true; 
                     let log = console.log;
                     console.log('------------------------ Debug Mode Enabled👀 --------------------', _debug)
-                  /*  log = (function () {
-                        return (...args) => {
-                            console.log(...args)
-                            return this;
-                        }
-                    })*/
                     
                 }
                 else if(enabled == false || _debug == false){
