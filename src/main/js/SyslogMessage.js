@@ -207,15 +207,11 @@ class SyslogMessage {
              */
             withDateTimestamp(timestamp){
                 if(timestamp instanceof Date){
-                    if(timestamp == null){
-                        this._timestamp = null;
-                        return this;
-                    }
-                    else {
-                        timestamp = new Date(timestamp);
-                        this._timestamp = timestamp == null ? null : timestamp.getTime();
-                        return this;
-                    }
+                    timestamp = new Date(timestamp);
+                    this._timestamp =  timestamp.getTime();
+                }
+                else {
+                    this._timestamp = null;
                 }
                 return this;
             }
@@ -262,13 +258,11 @@ class SyslogMessage {
             withDebug(enabled){
                 if(enabled == true){
                     _debug = true; 
-                    let log = console.log;
                     console.log('------------------------ Debug Mode Enabled👀 --------------------', _debug)
                     
                 }
                 else if(enabled == false || _debug == false){
                     this._debug = false;
-                    //console.log = () => {};
                 }
                 return this;
             }
