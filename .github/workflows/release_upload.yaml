@@ -32,7 +32,7 @@ jobs:
           run: npm set //registry.npmjs.org/:_authToken ${{secrets.NPMJS_AUTOMATION}}
         - name: Update the package,json
           run: |
-           
+           sed -i "s|\"version\": \"[^\"]*\"|\"version\": \"${{ github.event.release.tag_name }}\"|" package.json
            git config user.email "38@teragrep.com"
            git config user.name "spidermanja"
            git add .
