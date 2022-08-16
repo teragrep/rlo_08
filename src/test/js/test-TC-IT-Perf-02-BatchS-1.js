@@ -4,8 +4,7 @@
 */
 
 var config = require('dotenv');
-const RelpConnection = require('@teragrep/rlp_02/src/main/js/RelpConnection')
-const RelpBatch = require('@teragrep/rlp_02/src/main/js/RelpBatch');
+const {RelpBatch, RelpConnection, RelpRequest, RelpWindow} = require("@teragrep/rlp_02");
 const async = require('async')
 const SyslogMessage = require('../../main/js/SyslogMessage');
 const Severity = require('../../main/js/Severity')

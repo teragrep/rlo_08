@@ -4,15 +4,13 @@
  * install the RLP_02 package - Configuration might need more tune up in the RLP_02 or RLO_08 component 
  * 
  * @todo Ok the current fix, which is returning the buffer instead of string, works with relp server, however there is some patchy needed,
- * 1 -  Fix the import of rlp_02 scoped package in a clean way, "cannot find module @teragrep/rlp_02"  
+ * @done -  Fix the import of rlp_02 scoped package in a clean way, "cannot find module @teragrep/rlp_02"  
  * 
  * 
  */
 
 var config = require('dotenv');
-//const {RelpBatch, RelpConnection, RelpRequest, RelpWindow} = require("@teragrep/rlp_02"); //import of rlp_02 scoped package in a clean way
-const RelpConnection = require('@teragrep/rlp_02/src/main/js/RelpConnection')
-const RelpBatch = require('@teragrep/rlp_02/src/main/js/RelpBatch');
+const {RelpBatch, RelpConnection, RelpRequest, RelpWindow} = require("@teragrep/rlp_02"); //import of rlp_02 scoped package in a clean way
 const async = require('async')
 const SyslogMessage = require('../../main/js/SyslogMessage');
 const Severity = require('../../main/js/Severity')
