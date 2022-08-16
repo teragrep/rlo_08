@@ -5,7 +5,7 @@ on: push
 jobs:
   # Confirm the coverity upload
   coverity_upload:
-    uses: teragrep/rlo_08/.github/workflows/coverity_upload.yaml@base-feat
+    uses: teragrep/rlo_08/.github/workflows/coverity_upload.yaml@main
     secrets: 
       COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
       COVERITY_EMAIL: ${{ secrets.COVERITY_EMAIL }}
