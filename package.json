@@ -1,6 +1,6 @@
 {
   "name": "@teragrep/rlo_08",
-  "version": "v1.0.1",
+  "version": "v1.0.1-rc1",
   "description": "Syslog Javascript client library",
   "repository": {
     "type": "git",
