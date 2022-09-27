@@ -298,7 +298,7 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
-         setDebugMode()
+         setDebugMode() // for testing purpose only it should be enabled
          const startTime = Date.now(); // Benchmarking
          const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
          console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
@@ -708,7 +708,7 @@ function toPromiseAll(){
         */
        if(this._msg != null){
            let msgWriter = new CharArrayWriter();
-           msgWriter.write(this._msg, 0, this._msg.length);
+           msgWriter.write(this._msg, 0, Buffer.byteLength(this._msg, 'utf8')); // Fix for the Buffer.byteLength(string, 'utf8')
            completeBuffer =  msgWriter.writeTo(completeBuffer);      
        }
        let resultBuffer = [completeBuffer, nLineBuffer]
