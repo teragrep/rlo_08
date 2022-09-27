@@ -12,3 +12,7 @@ console.log(SDParamTimeZoneValidDup.hashCode());
 console.log(SDParamTimeZoneValidDup.getClass());
 console.log(SDParamtimZoneValid.toString());
 
+let eS = new SDParam("eventSource", "Àpplcation")
+
+console.log(eS.toString())
+console.log(eS.getParamValue())

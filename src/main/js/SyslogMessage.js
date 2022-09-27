@@ -298,7 +298,7 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
-         setDebugMode() // for testing purpose only it should be enabled
+         //setDebugMode() // for testing purpose only it should be enabled
          const startTime = Date.now(); // Benchmarking
          const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
          console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
@@ -545,7 +545,7 @@ function  writeSDElement(sde){
  function writeSDParam(sdSerializer){
     let pos = 0;
     let sdp = sdSerializer.getSdp();
-    let nSize = pos +  sdp.getParamValue().toString().length + sdp.getParamName().toString().length + 4;
+    let nSize = pos +  Buffer.byteLength(sdp.getParamValue(), 'utf8') + sdp.getParamName().toString().length + 4; // Updated: UTF8 support for the Param value 
     let nBuffer = Buffer.alloc(nSize); // Transforming to the new Buffer  
     nBuffer.write(SyslogMessage.SP, pos++);
     nBuffer.write(sdp.getParamName().toString("ascii"), pos); // ensure the Paramname accepts only ASCII
@@ -553,7 +553,7 @@ function  writeSDElement(sde){
     nBuffer.write('=', pos++);
     nBuffer.write('"', pos++);
     nBuffer.write(getEscapedParamValue.call(this,sdp.getParamValue()), pos)
-    pos+= sdp.getParamValue().toString().length;
+    pos+= Buffer.byteLength(sdp.getParamValue(), 'utf8'); //// Updated: UTF8 support for the Param value 
     nBuffer.write('"', pos++); 
     return nBuffer;
 }

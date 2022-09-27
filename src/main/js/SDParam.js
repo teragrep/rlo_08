@@ -43,7 +43,7 @@ let _paramValue;
      * @returns the value of paramValue 
      */
     getParamValue(){
-        return this._paramValue;
+        return Buffer.from(this._paramValue, 'utf-8').toString();
     }
 
     /**
@@ -61,7 +61,7 @@ let _paramValue;
      * UTF-8-STRING ; characters '"', '\' and; ']' MUST be escaped.
      */
     setParamValue(paramValue){
-        this._paramValue = paramValue;
+        this._paramValue = Buffer.from(paramValue, 'utf-8');
 
     }
 

@@ -18,7 +18,7 @@ let message = new SyslogMessage.Builder()
         .withProcId('8740')
         .withMsgId('ID47')
         .withMsg('Don’t test it as NÀSÀ¶¶ Àpplication') // Fixed: Problem with handling utf8 characters.
-        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Application"))) //@TODO 
+        .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Àpplication"))) //Updated support for UTF-8 
         .build()
 
 ```
