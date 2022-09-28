@@ -20,7 +20,7 @@ let message = new SyslogMessage.Builder()
         .withSeverity(Severity.INFORMATIONAL)
         .withProcId('8740') //validatied for the PRINTUSASCII format
         .withMsgId('ID47')
-        .withMsg('Don’t test it as NÀSÀ Àpplication') // 
+        .withMsg('Don’t test it as NÀSÀ Àpp') // 
         .withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "Àpplication"))) //Updated support for UTF-8 
         .build()
 
