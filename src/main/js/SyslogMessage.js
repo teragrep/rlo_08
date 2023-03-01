@@ -298,7 +298,7 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
-         setDebugMode() // for testing purpose only it should be enabled
+         //setDebugMode() // for testing purpose only it should be enabled
          const startTime = Date.now(); // Benchmarking
          const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
          console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
@@ -476,7 +476,7 @@ function writeNillableValue(value){
 }
 
 /**
-* 
+* @TODO: Fix the space issue between the next two SD Element 
 * @param {Set} sdElementSet 
 * @returns {Buffer}
 */
@@ -484,6 +484,8 @@ function writeNillableValue(value){
 function writeStructureDataOrNillableValue(sdElementSet){
    let pos = 0;
    let buffer;
+   let sdeArray = []; // Support to handle the multiple sdelements
+
    if(sdElementSet == null || sdElementSet.size == 0){
        buffer = Buffer.alloc(2)
        buffer.write(SyslogMessage.SP, pos++);
@@ -491,7 +493,8 @@ function writeStructureDataOrNillableValue(sdElementSet){
        return buffer;
    } else{
        for(const sde of sdElementSet){
-        buffer =  writeSDElement.call(this,sde)
+        sdeArray.push(writeSDElement.call(this,sde))
+        buffer = Buffer.concat(sdeArray)
         }
         return buffer;
    }
