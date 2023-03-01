@@ -33,8 +33,8 @@ let event_id_48577, origin_48577;
        .withFacility(Facility.USER) // user-defined 
        .withSeverity(Severity.WARNING) // Warining 
        .withProcId('8740') 
-       .withMsg('Todays lucky number is 17649276') // 
-
+       .withMsg('Todays lucky number is 17649276 🤓') // 
+       .withMsgId('ID47')
        .withSDElement(event_id_48577) 
        .withSDElement(origin_48577) 
        //.withSDElement(new SDElement("exampleSDID@32473", new SDParam("iut", "3"), new SDParam("eventSource", "HyväApplication")))  

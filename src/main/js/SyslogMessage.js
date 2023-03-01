@@ -444,7 +444,10 @@ function msgIdSixthPromise(){
     return new Promise(async(resolve, reject) => {
         validateMsgId.call(this, this._msgId);
         let msgID = writeNillableValue.call(this, this._msgId);
-        resolve(msgID);
+        let spmsgID = Buffer.from(SyslogMessage.SP) // handling the space issue between the SDElements
+        let arr = [msgID, spmsgID]
+        let result = Buffer.concat(arr)
+        resolve(result);
     })
 }
 
@@ -517,10 +520,11 @@ function writeStructureDataOrNillableValue(sdElementSet){
 function  writeSDElement(sde){   
     //ID Buffer 
     let bufferArray = [];  // keeps the buffers for the concatenation
-    let bufsize = sde.getSdID().toString().length + 2;
+    let bufsize = sde.getSdID().toString().length+2;
     let idBuffer = Buffer.alloc(bufsize);
     let pos = 0;
-    idBuffer.write(SyslogMessage.SP, pos++);
+    
+    //idBuffer.write(SyslogMessage.SP, pos++); // Handling the space now adjusted into the msgID promise Ref:Line 447
     idBuffer.write('[', pos++);
     idBuffer.write(sde.getSdID(), pos)
 
