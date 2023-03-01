@@ -298,7 +298,7 @@ class SyslogMessage {
      * 
      */
      async toRfc5424SyslogMessage(){
-         //setDebugMode() // for testing purpose only it should be enabled
+         setDebugMode() // for testing purpose only it should be enabled
          const startTime = Date.now(); // Benchmarking
          const used = process.memoryUsage().heapUsed / 1024 / 1024; //measuring the memory usage
          console.log(`The script uses before the promise call approx ${Math.round(used * 100) / 100} MB`);
