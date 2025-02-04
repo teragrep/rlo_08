@@ -1,10 +1,8 @@
 image::https://avatars.githubusercontent.com/u/71876378?s=200&v=4[Teragrep Logo]
 
-# Syslog Javascript Client
+# RLO_08: Syslog (RFC 5424) formatter for JavaScript
 
-## RLO_08
-
-Client Library written in Javascript to send messages to a Syslog server
+Generates Syslog messages in RFC 5424 format.
 
 ### Generate the Syslog messages
 
